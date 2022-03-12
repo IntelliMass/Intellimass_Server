@@ -1,8 +1,8 @@
-from basicFlow.Step1 import searchQuerySemanticScholar
-from basicFlow.Step2 import extendArticles
-from basicFlow.Step3 import getConnectionsByFeature
-from basicFlow.Step4 import getMostCommons
-from basicFlow.Step5 import sendResponse
+from Step1 import searchQuerySemanticScholar
+from Step2 import extendArticles
+from Step3 import getConnectionsByFeature
+from Step4 import getMostCommons
+from Step5 import arrangeResponse
 import time
 
 
@@ -33,8 +33,9 @@ def handleQuery(query, numOfResults):
     print(len(dfOfArticles))
     ########################################################################
     # Step 5 - Arrange all together and send response
-    sendResponse(dfOfArticles, connections, mostCommonTopics)
+    res = arrangeResponse(dfOfArticles, connections, mostCommonTopics, mostCommonAuthors)
+    return res
     ########################################################################
 
 
-handleQuery("IOT", 100)
+# handleQuery("IOT", 200)

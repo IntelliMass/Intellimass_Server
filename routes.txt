@@ -1,0 +1,4 @@
+1. https://6ic62rws84.execute-api.eu-west-2.amazonaws.com/dev/query     [POST,PUT]
+2. https://6ic62rws84.execute-api.eu-west-2.amazonaws.com/dev/articles  [GET]
+3. https://6ic62rws84.execute-api.eu-west-2.amazonaws.com/dev/metadata  [GET]
+4. https://6ic62rws84.execute-api.eu-west-2.amazonaws.com/dev/network   [GET]

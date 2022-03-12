@@ -1,5 +1,4 @@
 import pandas as pd
-from basicFlow.structs import Conncetion
 
 
 def getConnectionsByFeature(dfOfArticles: pd.DataFrame, feature: str):

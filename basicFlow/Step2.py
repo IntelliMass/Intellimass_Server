@@ -3,7 +3,7 @@ import requests
 import json
 import threading
 import time
-import basicFlow.config as config
+import config
 
 
 def extendPaperWithTopics(paperId: str, results: list):
@@ -24,7 +24,6 @@ def extendArticles(dfOfArticles: pd.DataFrame, numOfResults):
     threads = []
     count = 0
     for _, article in dfOfArticles.iterrows():
-        # print(article['paperId'])
         threads.append(threading.Thread(target=extendPaperWithTopics, args=(article['paperId'], results)))
         threads[count].start()
         count += 1
