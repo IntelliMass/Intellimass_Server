@@ -132,7 +132,7 @@ def get_categories():
     articles, count, obj = common_api_get_request()
     articles = articles[:count]
     df_articles = pd.DataFrame(articles)
-    list_categories = df_articles['categories'].unique()
+    list_categories = list(df_articles['categories'].unique())
     return {"articleCategories": list_categories}
 
 
