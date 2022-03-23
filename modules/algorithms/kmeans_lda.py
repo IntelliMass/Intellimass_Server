@@ -29,14 +29,6 @@ class LdaModeling:
         self.kmeans_papers()
         self.activate_lda_training()
 
-    def __loading_and_cleaning_data(self, path: str):
-        print("__loading_and_cleaning_data")
-        if path.endswith('json'):
-            loaded_json = json.load(open(path))
-            self.__papers = pd.DataFrame(loaded_json['articles'])
-        if path.endswith('csv'):
-            self.__papers = pd.read_csv(path)
-
     def __remove_punctuation_and_convert_to_lowercase(self):
         print("__remove_punctuation_and_convert_to_lowercase")
         self.__papers['processed_abstract'] = self.__papers['abstract'].map(lambda x: re.sub('[,\.()!?]', '', x))
@@ -135,10 +127,3 @@ class LdaModeling:
     @property
     def clean_papers(self):
         return self.__papers['clean_abstract_str']
-
-
-def main():
-    path_json = './json_file/response100_IOT.json'
-    lda_temp = LdaModeling(path_json)
-    topic_list = lda_temp.topics_list
-    print(topic_list)
