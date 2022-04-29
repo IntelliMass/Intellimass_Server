@@ -5,6 +5,19 @@ import pandas as pd
 # from modules.algorithms import frequentWords, kmeans_lda
 from modules import algorithms
 
+#####################################################
+# CONSTANTS CONSTANTS CONSTANTS CONSTANTS CONSTANTS #
+#####################################################
+
+PORT = 5000
+
+COMMON_HEADER_RESPONSE = {
+    'Access-Control-Allow-Headers': '*',
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Methods': '*'
+}
+
+#####################################################
 
 def roundup(x):
     """
@@ -15,10 +28,11 @@ def roundup(x):
     return int(math.ceil(x / 100.0)) * 100
 
 
-def getPostData(*argv):
+def get_post_data(*argv):
     """
+    Extract post data by given *argv
     :param argv: Keys to extract from post body
-    :return: Post Data
+    :return: Post Data -> tuple
     """
     data = []
     for key in argv:
@@ -29,7 +43,12 @@ def getPostData(*argv):
         data.append(extractedKey)
     return tuple(data)
 
-def getQueryParams():
+
+def get_query_params():
+    """
+    Extract query params from GET request
+    :return:
+    """
     queryId = request.args.get('id')
     if queryId is None:
         return Response(response="Bad Request - id",
@@ -47,19 +66,27 @@ def getQueryParams():
         count = int(count)
     except TypeError:
         raise Response(response="Bad Request - count", headers={'Access-Control-Allow-Origin': '*'}, status=200)
+    return queryId, count
 
 
-def cleanArticlesDF(articlesDF: pd.DataFrame):
+def clean_articles_df(articlesDF: pd.DataFrame):
+    """
+    CLean articles DF:
+        * Faulted abstract
+    :param articlesDF
+    :return: articlesDF: pd.DataFrame
+    """
     return articlesDF.dropna(subset=["abstract"], inplace=True)
 
 
-def articleExtender(articlesDF: pd.DataFrame, query: str):
+def article_extender(articlesDF: pd.DataFrame, query: str):
     """
-
-    :param articlesDF:
-    :return:
+    Extend articles DataFrame with frequent words & clusters (topics)
+    :param articlesDF
+    :return: articlesDF: pd.DataFrame
     """
-    articlesDF = cleanArticlesDF(articlesDF)
+    articlesDF = clean_articles_df(articlesDF)
     articlesDF = algorithms.frequentWords.append(articlesDF, query)
     articlesDF = algorithms.kmeans_lda.LdaModeling(articlesDF).papers
     return articlesDF
+

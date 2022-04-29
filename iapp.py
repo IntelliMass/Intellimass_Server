@@ -9,7 +9,7 @@ import json
 # MODULES MODULES MODULES MODULES MODULES MODULES #
 from modules import utils
 from modules.thirdParty import SemanticScholarAPI, config
-from modules.db import sessionsTable, privateCollectionsTable
+from modules.db import sessionsTable, privateCollectionsTable, objects
 # MODULES MODULES MODULES MODULES MODULES MODULES #
 ###################################################
 
@@ -31,33 +31,29 @@ def query():
                                         venue: str
                                     }
         2. Append to each article frequent words & topics.
+        3. Insert to Database
     :response: 200/400
     """
 
     start = time.time()
-    query = utils.getPostData('query')
+    query = utils.get_post_data('query')
     rawArticles = SemanticScholarAPI.getArticles(query)
-    extendedArticles = utils.articleExtender(rawArticles, query)
-    object = QueryObject(query, extendedArticles, config.Defaults.numOfArticles_firstSearch)
-    db.insert(object)
-
-    headers = {
-        'Access-Control-Allow-Headers': '*',
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Methods': '*'
-    }
+    extendedArticles = utils.article_extender(rawArticles, query)
+    object = objects.QueryObject(query, extendedArticles, config.Defaults.numOfArticles_firstSearch)
+    sessionsTable.insert(object)
 
     ################################################
     print("time: " + str(time.time() - start))
     ################################################
 
-    return Response(response=json.dumps({'queryId': object.id}), status=200, headers=headers)
+    return Response(response=json.dumps({'queryId': object.id}), status=200, headers=utils.COMMON_HEADER_RESPONSE)
 
 
 
 @app.route('/articles', methods=['GET'])
 def get_articles():
-    queryParams = utils.getQueryParams()
+    queryId, count = utils.get_query_params()
+
 
 @app.route('/metadata', methods=['GET'])
 def get_metadata():
@@ -83,8 +79,8 @@ if __name__ == '__main__':
     # REMOVE REMOVE REMOVE REMOVE REMOVE REMOVE REMOVE REMOVE REMOVE #
     from waitress import serve
     if len(sys.argv) > 1 and sys.argv[1].lower() == 'prod':
-        serve(app, host="0.0.0.0", port=5000)
+        serve(app, host="0.0.0.0", port=int(os.environ.get("PORT", utils.PORT)))
     # REMOVE REMOVE REMOVE REMOVE REMOVE REMOVE REMOVE REMOVE REMOVE #
     ##################################################################
     else:
-        app.run(host='0.0.0.0', debug=True, port=int(os.environ.get("PORT", 5000)))
+        app.run(host='0.0.0.0', debug=True, port=int(os.environ.get("PORT", utils.PORT)))
