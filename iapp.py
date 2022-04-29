@@ -49,7 +49,6 @@ def query():
     return Response(response=json.dumps({'queryId': object.id}), status=200, headers=utils.COMMON_HEADER_RESPONSE)
 
 
-
 @app.route('/articles', methods=['GET'])
 def get_articles():
     query_id, count, filter_feature, filter_list = utils.get_query_params('id', 'count', 'filterFeature', 'filterList')
@@ -73,7 +72,7 @@ def get_network():
 
 
 @app.route('/getOne', methods=['GET'])
-def getOne():
+def get_one():
     pass
 
 
@@ -81,6 +80,30 @@ def getOne():
 def get_categories():
     pass
 
+
+@app.route('/collections', methods=['GET'])
+def get_collections():
+    pass
+
+
+@app.route('/create_collection', methods=['POST'])
+def create_collection():
+    pass
+
+
+@app.route('/update_insert', methods=['PETCH'])
+def update_insert():
+    pass
+
+
+@app.route('/update_delete', method=['PETCH'])
+def update_delete():
+    pass
+
+
+@app.route('/collection_delete', method=['DELETE'])
+def collection_delete():
+    pass
 
 
 if __name__ == '__main__':

@@ -22,6 +22,7 @@ COMMON_HEADER_RESPONSE = {
 
 #####################################################
 
+
 def roundup(x):
     """
     Round up to 100
@@ -39,11 +40,11 @@ def get_post_data(*argv):
     """
     data = []
     for key in argv:
-        extractedKey = json.loads(request.data.decode('utf-8')).get(key)
-        if extractedKey is None:
+        extracted_key = json.loads(request.data.decode('utf-8')).get(key)
+        if extracted_key is None:
             return Response(response=f"Bad Request - {key}", status=400,
                             headers={'Access-Control-Allow-Origin': '*'})
-        data.append(extractedKey)
+        data.append(extracted_key)
     return tuple(data)
 
 
@@ -54,21 +55,22 @@ def get_query_params(*argv):
     """
     data = []
     for key in argv:
-        extractedKey = request.args.get(key)
-        if extractedKey is None:
+        extracted_key = request.args.get(key)
+        if extracted_key is None:
             return Response(response=f"Bad Request - {key}", status=400,
                             headers={'Access-Control-Allow-Origin': '*'})
-        data.append(extractedKey)
+        data.append(extracted_key)
     return tuple(data)
 
-def clean_articles_df(articlesDF: pd.DataFrame):
+
+def clean_articles_df(articles_df: pd.DataFrame):
     """
     CLean articles DF:
         * Faulted abstract
-    :param articlesDF
+    :param articles_df
     :return: articlesDF: pd.DataFrame
     """
-    return articlesDF.dropna(subset=["abstract"], inplace=True)
+    return articles_df.dropna(subset=["abstract"], inplace=True)
 
 
 def article_extender(articles_df: pd.DataFrame, query: str):
@@ -78,10 +80,10 @@ def article_extender(articles_df: pd.DataFrame, query: str):
     :param query:
     :return: articlesDF: pd.DataFrame
     """
-    articlesDF = clean_articles_df(articles_df)
-    articlesDF = algorithms.frequentWords.append(articlesDF, query)
-    articlesDF = algorithms.kmeans_lda.LdaModeling(articlesDF).papers
-    return articlesDF
+    articles_df = clean_articles_df(articles_df)
+    articles_df = algorithms.frequentWords.append(articles_df, query)
+    articles_df = algorithms.kmeans_lda.LdaModeling(articles_df).papers
+    return articles_df
 
 
 def handle_articles_count(session_object: SessionObject, count: int):
