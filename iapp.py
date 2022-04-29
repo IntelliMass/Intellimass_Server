@@ -39,7 +39,7 @@ def query():
     query = utils.get_post_data('query')
     rawArticles = SemanticScholarAPI.getArticles(query)
     extendedArticles = utils.article_extender(rawArticles, query)
-    object = objects.QueryObject(query, extendedArticles, config.Defaults.numOfArticles_firstSearch)
+    object = objects.SessionObject(query, extendedArticles, config.Defaults.numOfArticles_firstSearch)
     sessionsTable.insert(object)
 
     ################################################
@@ -52,20 +52,30 @@ def query():
 
 @app.route('/articles', methods=['GET'])
 def get_articles():
-    queryId, count = utils.get_query_params()
+    query_id, count, filter_feature, filter_list = utils.get_query_params('id', 'count', 'filterFeature', 'filterList')
+    sessions_table_object = sessionsTable.get(query_id)
+    articles_df = utils.handle_articles_count(sessions_table_object, count)
+    articles_df = utils.filter_articles_by_feature(articles_df, filter_feature, filter_list)
+    articles_json = utils.articles_to_json(articles_df)
+    return {"articles": articles_json}
 
 
 @app.route('/metadata', methods=['GET'])
 def get_metadata():
-    pass
+    query_id, count = utils.get_query_params('id', 'count', 'filterFeature', 'filterList')
+    sessions_table_object = sessionsTable.get(query_id)
+    articles_df = utils.handle_articles_count(sessions_table_object, count)
+
 
 @app.route('/network', methods=['GET'])
 def get_network():
     pass
 
+
 @app.route('/getOne', methods=['GET'])
 def getOne():
     pass
+
 
 @app.route('/categories', methods=['GET'])
 def get_categories():

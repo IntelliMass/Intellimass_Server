@@ -4,6 +4,9 @@ import math
 import pandas as pd
 # from modules.algorithms import frequentWords, kmeans_lda
 from modules import algorithms
+from modules.db.objects import SessionObject
+from modules.db import sessionsTable
+from modules.thirdParty.semanticScholar import SemanticScholarAPI
 
 #####################################################
 # CONSTANTS CONSTANTS CONSTANTS CONSTANTS CONSTANTS #
@@ -30,7 +33,7 @@ def roundup(x):
 
 def get_post_data(*argv):
     """
-    Extract post data by given *argv
+    Extract post body by given *argv
     :param argv: Keys to extract from post body
     :return: Post Data -> tuple
     """
@@ -44,30 +47,19 @@ def get_post_data(*argv):
     return tuple(data)
 
 
-def get_query_params():
+def get_query_params(*argv):
     """
     Extract query params from GET request
     :return:
     """
-    queryId = request.args.get('id')
-    if queryId is None:
-        return Response(response="Bad Request - id",
-                        headers={'Access-Control-Allow-Origin': '*'},
-                        status=400)
-    if queryId == "":
-        return Response(response="Bad Request - id empty",
-                        headers={'Access-Control-Allow-Origin': '*'},
-                        status=400)
-
-    count = request.args.get('count')
-    if count is None:
-        count = 100
-    try:
-        count = int(count)
-    except TypeError:
-        raise Response(response="Bad Request - count", headers={'Access-Control-Allow-Origin': '*'}, status=200)
-    return queryId, count
-
+    data = []
+    for key in argv:
+        extractedKey = request.args.get(key)
+        if extractedKey is None:
+            return Response(response=f"Bad Request - {key}", status=400,
+                            headers={'Access-Control-Allow-Origin': '*'})
+        data.append(extractedKey)
+    return tuple(data)
 
 def clean_articles_df(articlesDF: pd.DataFrame):
     """
@@ -79,14 +71,36 @@ def clean_articles_df(articlesDF: pd.DataFrame):
     return articlesDF.dropna(subset=["abstract"], inplace=True)
 
 
-def article_extender(articlesDF: pd.DataFrame, query: str):
+def article_extender(articles_df: pd.DataFrame, query: str):
     """
     Extend articles DataFrame with frequent words & clusters (topics)
-    :param articlesDF
+    :param articles_df:
+    :param query:
     :return: articlesDF: pd.DataFrame
     """
-    articlesDF = clean_articles_df(articlesDF)
+    articlesDF = clean_articles_df(articles_df)
     articlesDF = algorithms.frequentWords.append(articlesDF, query)
     articlesDF = algorithms.kmeans_lda.LdaModeling(articlesDF).papers
     return articlesDF
 
+
+def handle_articles_count(session_object: SessionObject, count: int):
+
+    if count > len(session_object.articles):
+        new_articles_df = SemanticScholarAPI.get_articles(session_object.query, offset=session_object.offset)
+        session_object.articles.append(new_articles_df, ignore_index=True)
+        session_object.articles = article_extender(session_object.articles, session_object.query)
+        sessionsTable.update(session_object.id, session_object)
+    else:
+        return session_object.articles[:count]
+
+
+def filter_articles_by_feature(articles_df: pd.DataFrame, filter_feature: str, filter_list: list):
+    def any_wrapper(row, filterFeature, filterList):
+        def list_to_lower_case(array: list): return [word.lower() for word in array]
+        return any(freqWord in list_to_lower_case(row[filterFeature]) for freqWord in list_to_lower_case(filterList))
+    return articles_df[articles_df.apply(any_wrapper, axis=1, args=(filter_feature, filter_list))]
+
+
+def articles_to_json(articles_df: pd.DataFrame):
+    return articles_df.to_dict('records')

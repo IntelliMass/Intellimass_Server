@@ -1,7 +1,8 @@
 import uuid
 import pandas as pd
 
-class QueryObject(object):
+
+class SessionObject(object):
 
     def __init__(self, query: str, articles_df: pd.DataFrame, offset: int):
         self.query = query
