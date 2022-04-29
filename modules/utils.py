@@ -46,8 +46,7 @@ def getQueryParams():
     try:
         count = int(count)
     except TypeError:
-
-        return Response(response="Bad Request - count", headers={'Access-Control-Allow-Origin': '*'}, status=200)
+        raise Response(response="Bad Request - count", headers={'Access-Control-Allow-Origin': '*'}, status=200)
 
 
 def cleanArticlesDF(articlesDF: pd.DataFrame):

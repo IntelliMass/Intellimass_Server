@@ -1,1 +1,1 @@
-from mongoDB import db, QueryObject
+from mongoDB import sessionsTable, privateCollectionsTable

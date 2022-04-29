@@ -9,7 +9,7 @@ import json
 # MODULES MODULES MODULES MODULES MODULES MODULES #
 from modules import utils
 from modules.thirdParty import SemanticScholarAPI, config
-from modules.db import db, QueryObject
+from modules.db import sessionsTable, privateCollectionsTable
 # MODULES MODULES MODULES MODULES MODULES MODULES #
 ###################################################
 
@@ -69,12 +69,13 @@ def get_network():
 
 @app.route('/getOne', methods=['GET'])
 def getOne():
-
     pass
 
 @app.route('/categories', methods=['GET'])
 def get_categories():
     pass
+
+
 
 if __name__ == '__main__':
 
