@@ -37,7 +37,6 @@ def query():
 
     start = time.time()
     query = utils.get_post_data('query')
-    rawArticles = SemanticScholarAPI.getArticles(query)
     extendedArticles = utils.article_extender(rawArticles, query)
     object = objects.SessionObject(query, extendedArticles, config.Defaults.numOfArticles_firstSearch)
     sessionsTable.insert(object)
@@ -83,12 +82,30 @@ def get_categories():
 
 @app.route('/collections', methods=['GET'])
 def get_collections():
-    pass
+    user_id = utils.get_query_params('user_id')
+    private_collection_table_object = privateCollectionsTable.get(user_id)
+    collection_json = utils.collection_to_json(private_collection_table_object, None)
+    # articles_df = utils.handle_articles_count(sessions_table_object, count)
+    # articles_json = utils.collection_to_json(articles_df)
+    return {"collection": collection_json}
 
 
 @app.route('/create_collection', methods=['POST'])
 def create_collection():
-    pass
+    start = time.time()
+    user_id, collection_name = utils.get_post_data('id')
+    # extendedArticles = utils.article_extender(rawArticles, query)
+    collection_object = objects.PrivateCollectionObject(user_id, collection_name, [])
+    # object = objects.SessionObject(query, extendedArticles, config.Defaults.numOfArticles_firstSearch)
+    # sessionsTable.insert(object)
+    privateCollectionsTable.insert(collection_object)
+
+    ################################################
+    print("time: " + str(time.time() - start))
+    ################################################
+
+    return Response(response=json.dumps({'queryId': collection_object.id}), status=200,
+                    headers=utils.COMMON_HEADER_RESPONSE)
 
 
 @app.route('/update_insert', methods=['PETCH'])

@@ -4,7 +4,7 @@ import math
 import pandas as pd
 # from modules.algorithms import frequentWords, kmeans_lda
 from modules import algorithms
-from modules.db.objects import SessionObject
+from modules.db.objects import SessionObject, PrivateCollectionObject
 from modules.db import sessionsTable
 from modules.thirdParty.semanticScholar import SemanticScholarAPI
 
@@ -106,3 +106,9 @@ def filter_articles_by_feature(articles_df: pd.DataFrame, filter_feature: str, f
 
 def articles_to_json(articles_df: pd.DataFrame):
     return articles_df.to_dict('records')
+
+
+def collection_to_json(private_collection_object: PrivateCollectionObject, articles_df: pd.DataFrame):
+    json_to_return = dict()
+    json_to_return[private_collection_object.name] = articles_df.to_dict('records')
+    return json_to_return
