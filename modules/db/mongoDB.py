@@ -28,7 +28,7 @@ class MongoDB:
     @classmethod
     def delete(cls, id_to_delete):
         delete_filter = {'id': id_to_delete}
-        cls.__db.delte_one(delete_filter)
+        cls.__db.delete_one(delete_filter)
 
 
 class SessionDB(MongoDB):
