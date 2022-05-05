@@ -1,1 +1,1 @@
-from semanticScholar import SemanticScholarAPI
+from modules.thirdParty.semanticScholar import SemanticScholarAPI

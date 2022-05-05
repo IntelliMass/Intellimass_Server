@@ -13,7 +13,7 @@ class SemanticScholarAPI:
     @staticmethod
     def __parallel_search(query: str, offset: int, queryResults: list):
         query = query.replace(' ', '+')
-        url = f"http://api.semanticscholar.org/graph/v1/paper/search?query={query}&offset={offset}&limit={100}&fields=title,authors,isOpenAccess,fieldsOfStudy,year,abstract,venue"
+        url = f"http://api.semanticscholar.org/graph/v1/paper/search?query={query}&offset={offset}&limit=100&fields=title,authors,isOpenAccess,fieldsOfStudy,year,abstract,venue"
         res = requests.get(url, headers=config.SemanticScholarheader)
         dictRes = json.loads(res.text)
         resData = dictRes['data']
@@ -21,15 +21,13 @@ class SemanticScholarAPI:
 
     @staticmethod
     def get_articles(query: str, num_of_articles=200, offset=0):
-
         queryResults = []
         roundedNumOfArticles = utils.roundup(num_of_articles)
         threads = []
-        for num in range(roundedNumOfArticles):
-            t = threading.Thread(target=SemanticScholarAPI.__parallel_search, args=(query, offset + num * 100, queryResults))
+        for num in range(0, roundedNumOfArticles, 100):
+            t = threading.Thread(target=SemanticScholarAPI.__parallel_search, args=(query, offset + num, queryResults))
             threads.append(t)
             t.start()
-
         for thread in threads:
             thread.join()
 

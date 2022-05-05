@@ -1,1 +1,1 @@
-from mongoDB import sessionsTable, privateCollectionsTable
+from modules.db.mongoDB import sessionsTable, privateCollectionsTable

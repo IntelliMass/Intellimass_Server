@@ -4,10 +4,10 @@ import pandas as pd
 
 class SessionObject(object):
 
-    def __init__(self, query: str, articles_df: pd.DataFrame, offset: int):
+    def __init__(self, query: str, articles_df: pd.DataFrame, offset: int, id=None):
         self.query = query
         self.articles = articles_df.to_dict('records')
-        self.id = str(uuid.uuid4())
+        self.id = id if id is not None else str(uuid.uuid4())
         self.offset = offset
 
 
