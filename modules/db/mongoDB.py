@@ -14,16 +14,17 @@ class MongoDB:
     def insert(self, object_to_push: object):
         self.__db.insert_one(object_to_push.__dict__)
 
-    def get(self, id_to_get: str):
-        return self.__db.find_one({"id": id_to_get})
+    def get(self, id_to_get: str, id_var="id"):
+        objects = self.__db.find({id_var: id_to_get}).__dict__
+        return objects
 
-    def update(self, id_to_update: str, object_to_update: object):
-        update_filter = {'id': id_to_update}
+    def update(self, id_to_update: str, object_to_update: object, id_var="id"):
+        update_filter = {id_var: id_to_update}
         set_params = {"$set": object_to_update.__dict__}
         self.__db.update_one(update_filter, set_params)
 
-    def delete(self, id_to_delete):
-        delete_filter = {'id': id_to_delete}
+    def delete(self, id_to_delete: str, id_var="id"):
+        delete_filter = {id_var: id_to_delete}
         self.__db.delete_one(delete_filter)
 
 

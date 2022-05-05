@@ -110,6 +110,7 @@ def get_categories():
     categories = utils.get_categories(articles_df)
     return {"categories": categories}
 
+
 @app.route('/collections', methods=['GET'])
 def get_collections():
     """
@@ -119,7 +120,11 @@ def get_collections():
     :return: 200/400
     """
     user_id = utils.get_query_params('user_id')
-    private_collection_table_object = privateCollectionsTable.get(user_id)
+    print(f'user_id: {user_id}')
+    private_collection_table_object = privateCollectionsTable.get(user_id, id_var="user_id")
+    print(f'private_collection_table_object: {private_collection_table_object}')
+    sessions_table_object = sessionsTable.get(private_collection_table_object["query_id"])
+    articles = utils.extract_articles_from_session_db(sessions_table_object, private_collection_table_object.article_list)
     collection_json = utils.collection_to_json(private_collection_table_object)
     return {"collection": collection_json}
 
@@ -133,9 +138,15 @@ def create_collection():
         articles_id: list of articles ids to save for the user by collection name
     :return: 200/400
     """
-    user_id = utils.get_query_params('user_id')
-    collection_name, articles_id_list = utils.get_post_data('collection_name', 'articles_id')
-    collection_object = objects.PrivateCollectionObject(user_id, collection_name, articles_id_list)
+    try:
+        user_id = utils.get_query_params('user_id')
+        collection_name, articles_id_list, query_id = utils.get_post_data('collection_name', 'articles_id', 'query_id')
+    except Exception as r:
+        return Response(eval(str(r)))
+    collection_object = objects.PrivateCollectionObject(user_id, collection_name, articles_id_list, query_id)
+    ##############################################
+    # !!!!!! handle duplications for user_id & collections
+    ##############################################
     privateCollectionsTable.insert(collection_object)
 
     return Response(response=json.dumps({'user_id': collection_object.user_id}), status=200,
@@ -158,7 +169,7 @@ def update_insert():
     return Response(response=json.dumps({'user_id': user_id}), status=200, headers=utils.COMMON_HEADER_RESPONSE)
 
 
-@app.route('/update_delete', method=['PATCH'])
+@app.route('/update_delete', methods=['PATCH'])
 def update_delete():
     """
     deletes article from user's collection
@@ -168,13 +179,13 @@ def update_delete():
     :return: 200/400
     """
     user_id = utils.get_query_params('user_id')
+
     collection_name, article_id = utils.get_post_data('collection_name', 'article_id')
     privateCollectionsTable.update({'user_id': user_id, 'collection_name': collection_name},
                                    {'$pull': {'articles_id': article_id}})
     return Response(response=json.dumps({'user_id': user_id}), status=200, headers=utils.COMMON_HEADER_RESPONSE)
 
-
-@app.route('/collection_delete', method=['DELETE'])
+@app.route('/collection_delete', methods=['DELETE'])
 def collection_delete():
     """
     deletes user's collection

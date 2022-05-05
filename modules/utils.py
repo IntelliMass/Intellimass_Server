@@ -1,3 +1,5 @@
+from collections import Counter
+
 from flask import request, Response
 import json
 import math
@@ -5,7 +7,7 @@ import pandas as pd
 # from modules.algorithms import frequentWords, kmeans_lda
 from modules import algorithms
 from modules.db.objects import SessionObject, PrivateCollectionObject
-from modules.db import sessionsTable
+from modules.db import sessionsTable, privateCollectionsTable
 from modules.thirdParty.semanticScholar import SemanticScholarAPI
 
 #####################################################
@@ -63,12 +65,15 @@ def get_query_params(*argv):
             data.append(None)
             continue
         if extractedKey is None:
-            return Response(response=f"Bad Request - {key}", status=400,
-                            headers={'Access-Control-Allow-Origin': '*'})
+            raise Exception("response=f'Bad Request - {key}', status=400, \
+                            headers={'Access-Control-Allow-Origin': '*'}")
         data.append(extractedKey)
+    if len(data) == 1:
+        return data[0]
     return tuple(data)
 
-def clean_articles_df(articlesDF: pd.DataFrame):
+
+def clean_articles_df(articles_df: pd.DataFrame):
     """
     CLean articles DF:
         * Faulted abstract
@@ -125,8 +130,6 @@ def get_metadata(articles_df: pd.DataFrame):
     fields_of_study_counter = []
     years_counter = []
     for _, article in articles_df.iterrows():
-        print(article['authors'])
-        print(article['authors'][0])
         frequent_words_counter.extend([frequent_word for frequent_word in article['frequentWords']])
         authors_counter.extend([author['name'] for author in article['authors']])
         fields_of_study_counter.extend(article['fieldsOfStudy'] if article['fieldsOfStudy'] is not None else [])
@@ -165,6 +168,11 @@ def get_categories(articles_df: pd.DataFrame):
     return list(set((articles_df['categories'])))
 
 
-
 def collection_to_json(private_collection_object: pd.DataFrame):
     return private_collection_object.to_dict('collection_name')
+
+
+def extract_articles_from_session_db(sessions_table_object: SessionObject, article_list: list):
+    # df2[df2['id'].isin(['SP.POP.TOTL','NY.GNP.PCAP.CD'])]
+    articles = sessions_table_object.articles
+    return articles[articles['id'].isin(article_list)]
