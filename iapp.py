@@ -53,6 +53,7 @@ def query():
     return Response(response=json.dumps({'queryId': object.id}), status=200, headers=utils.COMMON_HEADER_RESPONSE)
 
 
+
 @app.route('/articles', methods=['GET'])
 def get_articles():
     try:
@@ -108,6 +109,83 @@ def get_categories():
     articles_df = utils.filter_articles_by_feature(articles_df, filter_feature, filter_list)
     categories = utils.get_categories(articles_df)
     return {"categories": categories}
+
+@app.route('/collections', methods=['GET'])
+def get_collections():
+    """
+    gets collections by user_id
+    1 parameter:
+        user_id: to get user's collections
+    :return: 200/400
+    """
+    user_id = utils.get_query_params('user_id')
+    private_collection_table_object = privateCollectionsTable.get(user_id)
+    collection_json = utils.collection_to_json(private_collection_table_object)
+    return {"collection": collection_json}
+
+
+@app.route('/create_collection', methods=['POST'])
+def create_collection():
+    """
+    creates a collection by user id
+    3 parameters:
+        user_id, collection_name: to create a collection by user id and collection name
+        articles_id: list of articles ids to save for the user by collection name
+    :return: 200/400
+    """
+    user_id = utils.get_query_params('user_id')
+    collection_name, articles_id_list = utils.get_post_data('collection_name', 'articles_id')
+    collection_object = objects.PrivateCollectionObject(user_id, collection_name, articles_id_list)
+    privateCollectionsTable.insert(collection_object)
+
+    return Response(response=json.dumps({'user_id': collection_object.user_id}), status=200,
+                    headers=utils.COMMON_HEADER_RESPONSE)
+
+
+@app.route('/update_insert', methods=['PATCH'])
+def update_insert():
+    """
+    insert to existing collection by user an article
+    3 parameters:
+        user_id, collection_name: to get the needed collection
+        article_id: to insert it to the collection
+    :return: 200/400
+    """
+    user_id = utils.get_query_params('user_id')
+    collection_name, article_id = utils.get_post_data('collection_name', 'article_id')
+    privateCollectionsTable.update({'user_id': user_id, 'collection_name': collection_name},
+                                   {'$push': {'articles_id': article_id}})
+    return Response(response=json.dumps({'user_id': user_id}), status=200, headers=utils.COMMON_HEADER_RESPONSE)
+
+
+@app.route('/update_delete', method=['PATCH'])
+def update_delete():
+    """
+    deletes article from user's collection
+    3 parameters:
+        user_id, collection_name: to get the needed collection
+        article_id: to delete the article from the collection
+    :return: 200/400
+    """
+    user_id = utils.get_query_params('user_id')
+    collection_name, article_id = utils.get_post_data('collection_name', 'article_id')
+    privateCollectionsTable.update({'user_id': user_id, 'collection_name': collection_name},
+                                   {'$pull': {'articles_id': article_id}})
+    return Response(response=json.dumps({'user_id': user_id}), status=200, headers=utils.COMMON_HEADER_RESPONSE)
+
+
+@app.route('/collection_delete', method=['DELETE'])
+def collection_delete():
+    """
+    deletes user's collection
+    2 parameters:
+        user_id, collection_name: to delete user's collection
+    :return: 200/400
+    """
+    user_id = utils.get_query_params('user_id')
+    collection_name = utils.get_post_data('collection_name')
+    privateCollectionsTable.delete({'user_id': user_id, 'collection_name': collection_name})
+    return Response(response=json.dumps({'user_id': user_id}), status=200, headers=utils.COMMON_HEADER_RESPONSE)
 
 
 if __name__ == '__main__':

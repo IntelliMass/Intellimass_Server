@@ -1,12 +1,10 @@
-from collections import Counter
-
 from flask import request, Response
 import json
 import math
 import pandas as pd
 # from modules.algorithms import frequentWords, kmeans_lda
 from modules import algorithms
-from modules.db.objects import SessionObject
+from modules.db.objects import SessionObject, PrivateCollectionObject
 from modules.db import sessionsTable
 from modules.thirdParty.semanticScholar import SemanticScholarAPI
 
@@ -70,12 +68,11 @@ def get_query_params(*argv):
         data.append(extractedKey)
     return tuple(data)
 
-
-def clean_articles_df(articles_df: pd.DataFrame):
+def clean_articles_df(articlesDF: pd.DataFrame):
     """
     CLean articles DF:
         * Faulted abstract
-    :param articles_df
+    :param articlesDF
     :return: articlesDF: pd.DataFrame
     """
     articles_df.dropna(subset=["abstract"], inplace=True)
@@ -166,3 +163,8 @@ def get_metadata(articles_df: pd.DataFrame):
 
 def get_categories(articles_df: pd.DataFrame):
     return list(set((articles_df['categories'])))
+
+
+
+def collection_to_json(private_collection_object: pd.DataFrame):
+    return private_collection_object.to_dict('collection_name')

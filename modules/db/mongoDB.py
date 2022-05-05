@@ -1,6 +1,7 @@
 import pymongo
 from urllib.parse import quote_plus
 
+
 class MongoDB:
     __password = quote_plus("intel123")
     __db = None
@@ -23,7 +24,7 @@ class MongoDB:
 
     def delete(self, id_to_delete):
         delete_filter = {'id': id_to_delete}
-        self.__db.delte_one(delete_filter)
+        self.__db.delete_one(delete_filter)
 
 
 class SessionDB(MongoDB):

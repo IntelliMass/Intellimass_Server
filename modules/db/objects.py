@@ -13,7 +13,7 @@ class SessionObject(object):
 
 class PrivateCollectionObject(object):
 
-    def __init__(self, id: int, name: str, articleList: list):
-        self.id = id
-        self.name = name
-        self.articleList = articleList
+    def __init__(self, user_id: str, collection_name: str, article_list: list):
+        self.user_id = user_id
+        self.collection_name = collection_name
+        self.article_list = article_list
