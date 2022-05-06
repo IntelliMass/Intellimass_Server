@@ -15,7 +15,9 @@ class MongoDB:
         self.__db.insert_one(object_to_push.__dict__)
 
     def get(self, id_to_get: str, id_var="id"):
-        objects = self.__db.find({id_var: id_to_get}).__dict__
+        objects = list(self.__db.find({id_var: id_to_get}))
+        if len(objects) == 1:
+            return objects[0]
         return objects
 
     def update(self, id_to_update: str, object_to_update: object, id_var="id"):

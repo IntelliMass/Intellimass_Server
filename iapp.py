@@ -39,7 +39,7 @@ def query():
     start = time.time()
     try:
         (query,) = utils.get_post_data('query')
-    except Response as res:
+    except Exception as res:
         return res
     raw_articles = SemanticScholarAPI.get_articles(query)
     extended_articles = utils.article_extender(raw_articles, query)
@@ -51,7 +51,6 @@ def query():
     ################################################
 
     return Response(response=json.dumps({'queryId': object.id}), status=200, headers=utils.COMMON_HEADER_RESPONSE)
-
 
 
 @app.route('/articles', methods=['GET'])
@@ -81,6 +80,7 @@ def get_metadata():
     metadata = utils.get_metadata(articles_df)
     return {"metadata": metadata}
 
+
 @app.route('/network', methods=['GET'])
 def get_network():
     try:
@@ -92,7 +92,9 @@ def get_network():
     articles_df = utils.handle_articles_count(sessions_table_object, count)
     articles_df = utils.filter_articles_by_feature(articles_df, filter_feature, filter_list)
     network = Network(articles_df, feature)
-    return network.get_network()
+    links_list = network.get_network()
+    return Response(response=json.dumps({"network": links_list}), status=200, headers=utils.COMMON_HEADER_RESPONSE)
+
 
 @app.route('/getOne', methods=['GET'])
 def get_one():

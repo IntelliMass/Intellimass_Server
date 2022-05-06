@@ -4,7 +4,6 @@ from flask import request, Response
 import json
 import math
 import pandas as pd
-# from modules.algorithms import frequentWords, kmeans_lda
 from modules import algorithms
 from modules.db.objects import SessionObject, PrivateCollectionObject
 from modules.db import sessionsTable, privateCollectionsTable
@@ -27,11 +26,9 @@ MAX_COMMON_FEATURE = 10
 
 #####################################################
 
-def roundup(x):
+def roundup(x: int):
     """
     Round up to 100
-    :param x: int
-    :return:
     """
     return int(math.ceil(x / 100.0)) * 100
 
@@ -46,8 +43,8 @@ def get_post_data(*argv):
     for key in argv:
         extractedKey = json.loads(request.data.decode('utf-8')).get(key)
         if extractedKey is None:
-            raise Response(response=f"Bad Request - {key}", status=400,
-                           headers={'Access-Control-Allow-Origin': '*'})
+            raise Exception(f"Response(response='Bad Request - {key}', status=400, \
+                           headers=COMMON_HEADER_RESPONSE)")
         data.append(extractedKey)
     return tuple(data)
 
@@ -55,7 +52,6 @@ def get_post_data(*argv):
 def get_query_params(*argv):
     """
     Extract query params from GET request
-    :return:
     """
     data = []
     for key in argv:
@@ -65,7 +61,7 @@ def get_query_params(*argv):
             data.append(None)
             continue
         if extractedKey is None:
-            raise Exception("response=f'Bad Request - {key}', status=400, \
+            raise Exception(f"response='Bad Request - {key}', status=400, \
                             headers={'Access-Control-Allow-Origin': '*'}")
         data.append(extractedKey)
     if len(data) == 1:
@@ -77,8 +73,6 @@ def clean_articles_df(articles_df: pd.DataFrame):
     """
     CLean articles DF:
         * Faulted abstract
-    :param articlesDF
-    :return: articlesDF: pd.DataFrame
     """
     articles_df.dropna(subset=["abstract"], inplace=True)
     return articles_df
@@ -87,9 +81,6 @@ def clean_articles_df(articles_df: pd.DataFrame):
 def article_extender(articles_df: pd.DataFrame, query: str):
     """
     Extend articles DataFrame with frequent words & clusters (topics)
-    :param articles_df:
-    :param query:
-    :return: articlesDF: pd.DataFrame
     """
     articles_df = clean_articles_df(articles_df)
     articles_df = algorithms.frequentWords.append(articles_df, query)
@@ -173,6 +164,5 @@ def collection_to_json(private_collection_object: pd.DataFrame):
 
 
 def extract_articles_from_session_db(sessions_table_object: SessionObject, article_list: list):
-    # df2[df2['id'].isin(['SP.POP.TOTL','NY.GNP.PCAP.CD'])]
     articles = sessions_table_object.articles
     return articles[articles['id'].isin(article_list)]

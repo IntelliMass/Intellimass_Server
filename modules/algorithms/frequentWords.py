@@ -4,7 +4,7 @@ from sklearn.feature_extraction.text import ENGLISH_STOP_WORDS
 import string
 
 
-def append(articlesDF: pd.DataFrame, query: str):
+def append(articles_df: pd.DataFrame, query: str):
     """
     Appends frequent words column to articles DataFrame
     :param articlesDF: :type: pd.DateFrame
@@ -24,4 +24,4 @@ def append(articlesDF: pd.DataFrame, query: str):
         most_occur = counter.most_common(5)
         articleData['frequentWords'] = [freqWord[0] for freqWord in most_occur]
         return articleData
-    return articlesDF.apply(appendMostFrequentFromAbstract, args=(query,), axis=1)
+    return articles_df.apply(appendMostFrequentFromAbstract, args=(query,), axis=1)
