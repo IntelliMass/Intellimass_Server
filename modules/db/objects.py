@@ -11,19 +11,18 @@ class SessionObject(object):
         self.offset = offset
 
 
-class PrivateCollectionObject(object):
+# class PrivateCollectionObject(object):
+#
+#     def __init__(self, user_id: str, collection_name: str, article_list: list, query_id: str):
+#         self.user_id = user_id
+#         self.collection_name = collection_name
+#         self.article_list = article_list
+#         self.query_id = query_id
 
-    def __init__(self, user_id: str, collection_name: str, article_list: list, query_id: str):
+
+class PrivateCollectionObject(object):
+    def __init__(self, user_id: str, collection_name: str, query_id: str):
         self.user_id = user_id
         self.collection_name = collection_name
-        self.article_list = article_list
         self.query_id = query_id
-
-
-class TTTTOOOOOCCHANGEEEEEPrivateCollectionObject(object):
-
-    def __init__(self, user_id: str, collection_name: str, article_list: list, query_id: str):
-        self.user_id = user_id
-        self.collections = {}
-        self.article_list = article_list
-        self.query_id = query_id
+        self.articles_list = []

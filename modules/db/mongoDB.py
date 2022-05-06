@@ -39,6 +39,13 @@ class PrivateCollectionsDB(MongoDB):
     def __init__(self):
         super().__init__("private_Collections")
 
+    def is_collection_exists(self, id_to_get: str, collection_name: str):
+        objects = list(self.__db.find({'user_id': id_to_get, 'collection_name': collection_name}))
+        if objects:
+            return True
+        else:
+            return False
+
 
 sessionsTable = SessionDB()
 privateCollectionsTable = PrivateCollectionsDB()

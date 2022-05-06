@@ -143,17 +143,17 @@ def create_collection():
     """
     try:
         user_id = utils.get_query_params('user_id')
-        collection_name, articles_id_list, query_id = utils.get_post_data('collection_name', 'articles_id', 'query_id')
+        collection_name, query_id = utils.get_post_data('collection_name', 'query_id')
     except Exception as r:
         return Response(eval(str(r)))
-    collection_object = objects.PrivateCollectionObject(user_id, collection_name, articles_id_list, query_id)
-    ##############################################
-    # !!!!!! handle duplications for user_id & collections
-    ##############################################
-    privateCollectionsTable.insert(collection_object)
-
-    return Response(response=json.dumps({'user_id': collection_object.user_id}), status=200,
-                    headers=utils.COMMON_HEADER_RESPONSE)
+    collection_object = objects.PrivateCollectionObject(user_id, collection_name, query_id)
+    if privateCollectionsTable.is_collection_exists(user_id, collection_name):
+        return Response(response=json.dumps({'user_id': collection_object.user_id}), status=400,
+                        headers=utils.COMMON_HEADER_RESPONSE)
+    else:
+        privateCollectionsTable.insert(collection_object)
+        return Response(response=json.dumps({'user_id': collection_object.user_id}), status=200,
+                        headers=utils.COMMON_HEADER_RESPONSE)
 
 
 @app.route('/update_insert', methods=['PATCH'])
@@ -187,6 +187,7 @@ def update_delete():
     privateCollectionsTable.update({'user_id': user_id, 'collection_name': collection_name},
                                    {'$pull': {'articles_id': article_id}})
     return Response(response=json.dumps({'user_id': user_id}), status=200, headers=utils.COMMON_HEADER_RESPONSE)
+
 
 @app.route('/collection_delete', methods=['DELETE'])
 def collection_delete():
