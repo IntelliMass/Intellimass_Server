@@ -93,7 +93,8 @@ def get_network():
     articles_df = utils.filter_articles_by_feature(articles_df, filter_feature, filter_list)
     network = Network(articles_df, feature)
     links_list = network.get_network()
-    return Response(response=json.dumps({"network": links_list}), status=200, headers=utils.COMMON_HEADER_RESPONSE)
+    articles_json = utils.articles_to_json(articles_df)
+    return Response(response=json.dumps({"network": {"nodes": articles_json, "connections": links_list}}), status=200, headers=utils.COMMON_HEADER_RESPONSE)
 
 
 @app.route('/getOne', methods=['GET'])
