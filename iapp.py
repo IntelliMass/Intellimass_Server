@@ -156,8 +156,10 @@ def create_collection():
                         headers=utils.COMMON_HEADER_RESPONSE)
 
 
-@app.route('/update_insert', methods=['PATCH'])
-def update_insert():
+# @app.route('/update_insert', methods=['PATCH'])
+@app.route('/insert_article', methods=['PATCH'])
+# def update_insert():
+def insert_article():
     """
     insert to existing collection by user an article
     3 parameters:
@@ -166,9 +168,10 @@ def update_insert():
     :return: 200/400
     """
     user_id = utils.get_query_params('user_id')
-    collection_name, article_id = utils.get_post_data('collection_name', 'article_id')
+    collection_name, query_id, article_id = utils.get_post_data('collection_name', 'query_id', 'article_id')
+    article_obj = sessionsTable.get_article(query_id, article_id)
     privateCollectionsTable.update({'user_id': user_id, 'collection_name': collection_name},
-                                   {'$push': {'articles_id': article_id}})
+                                   {'$push': {'articles_list': article_obj}})
     return Response(response=json.dumps({'user_id': user_id}), status=200, headers=utils.COMMON_HEADER_RESPONSE)
 
 

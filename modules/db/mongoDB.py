@@ -29,6 +29,10 @@ class MongoDB:
         delete_filter = {id_var: id_to_delete}
         self.__db.delete_one(delete_filter)
 
+    def get_article(self, query_id: str, article_id: str):
+        obj = list(self.__db.find_one({'id': query_id, 'article_id': article_id}))
+        return obj
+
 
 class SessionDB(MongoDB):
     def __init__(self):
