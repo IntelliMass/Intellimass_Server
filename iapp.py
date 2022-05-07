@@ -114,6 +114,9 @@ def get_categories():
     return {"categories": categories}
 
 
+##############################################################################################
+# UPDATE UPDATE UPDATE UPDATE UPDATE UPDATE UPDATE UPDATE UPDATE UPDATE UPDATE UPDATE UPDATE #
+##############################################################################################
 @app.route('/collections', methods=['GET'])
 def get_collections():
     """
@@ -203,6 +206,24 @@ def collection_delete():
     user_id = utils.get_query_params('user_id')
     collection_name = utils.get_post_data('collection_name')
     privateCollectionsTable.delete({'user_id': user_id, 'collection_name': collection_name})
+    return Response(response=json.dumps({'user_id': user_id}), status=200, headers=utils.COMMON_HEADER_RESPONSE)
+
+
+@app.route('/collection_name', methods=['PATCH'])
+def collections_name_update():
+    """
+    updates user's collection name
+    3 parameters:
+        user_id: to locate user's collection
+        collection_name, new_collection: to find the collection and replace the name
+    :return: 200/400
+    """
+    user_id = utils.get_query_params('user_id')
+    current_collection, new_collection = utils.get_post_data('collection_name', 'new_collection')
+    try:
+        privateCollectionsTable.replace(user_id, current_collection, new_collection)
+    except Exception as r:
+        return Response(eval(str(r)))
     return Response(response=json.dumps({'user_id': user_id}), status=200, headers=utils.COMMON_HEADER_RESPONSE)
 
 

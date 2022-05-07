@@ -50,6 +50,11 @@ class PrivateCollectionsDB(MongoDB):
         else:
             return False
 
+    def replace(self, id_to_get: str, field_to_find: str, field_to_replace: str):
+        myquery = {"user_id": id_to_get, "collection_name": field_to_find}
+        new_values = {"$set": {"collection_name": field_to_replace}}
+        self.__db.update_one(myquery, new_values)
+
 
 sessionsTable = SessionDB()
 privateCollectionsTable = PrivateCollectionsDB()
