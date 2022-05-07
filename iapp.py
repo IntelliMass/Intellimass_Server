@@ -33,7 +33,7 @@ def query():
                                     }
         2. Append to each article frequent words & topics.
         3. Insert to Database
-    :response: 200/400
+    :response: 200 + query_id /400
     """
 
     start = time.time()
@@ -55,6 +55,11 @@ def query():
 
 @app.route('/articles', methods=['GET'])
 def get_articles():
+    """
+    query parameters : id, count, filterFeature, filterList
+    Get from Session_DB articles by unique query_id
+    :return:
+    """
     try:
         (query_id, count, filter_feature, filter_list) = utils.get_query_params('id', 'count', 'filterFeature',
                                                                                 'filterList')

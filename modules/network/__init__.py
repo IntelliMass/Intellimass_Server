@@ -3,11 +3,13 @@ import time
 import pandas as pd
 import itertools
 from modules.algorithms import BertTextSimilarity
-
+import numpy as np
 
 class Network:
 
-    DEFUALT_THRESHOLD = 0.5
+    DEFAULT_THRESHOLD = 0.5
+    ABSTRACT_MULTIPLIER_FOR_DEFAULT = 0.6
+    TITLE_MULTIPLIER_FOR_DEFAULT = 0.4
     ABSTRACT_THRESHOLD = 0.5
     TITLE_THRESHOLD = 0.8
 
@@ -21,6 +23,17 @@ class Network:
     def get_network(self):
         return self.network
 
+    @staticmethod
+    def __normalize(array):
+        norm = np.linalg.norm(array)
+        normalized_array = array / norm
+        return normalized_array
+
+
+    def __get_default_similarity(self, similarity_rank_title, similarity_rank_abstract):
+        return similarity_rank_title * self.TITLE_MULTIPLIER_FOR_DEFAULT + \
+        similarity_rank_abstract * self.ABSTRACT_MULTIPLIER_FOR_DEFAULT
+
     def connect_by_default(self):
         abstract_similarities = []
         thread_abstract = threading.Thread(target=self.connect_by_abstract, args=(abstract_similarities,))
@@ -31,14 +44,23 @@ class Network:
         thread_abstract.join()
         thread_title.join()
         for i in range(len(abstract_similarities)):
-            continue
-
+            for j in range(len(abstract_similarities)):
+                similarity = self.__get_default_similarity(title_similarities[i][j], abstract_similarities[i][j])
+                if similarity > self.DEFUALT_THRESHOLD:
+                    self.network.append(
+                        {
+                            "source": self.articles_df['paperId'][i],
+                            "target": self.articles_df['paperId'][j],
+                            "value": float("{:.4f}".format(similarity))
+                        }
+                    )
 
     def connect_by_abstract(self, call_back_object=None):
         self.network = []
-        bert = BertTextSimilarity(self.articles_df, 'abstarct')
+        bert = BertTextSimilarity(self.articles_df, 'abstract')
         start = time.time()
         similarities = bert.get_similarities()
+        similarities = self.__normalize(similarities)
         if call_back_object is not None:
             call_back_object = similarities
             print(f"Abstract Network takes {time.time() - start} seconds")
@@ -61,6 +83,7 @@ class Network:
         bert = BertTextSimilarity(self.articles_df, 'title')
         start = time.time()
         similarities = bert.get_similarities()
+        similarities = self.__normalize(similarities)
         if call_back_object is not None:
             call_back_object = similarities
             print(f"Title Network takes {time.time() - start} seconds")
