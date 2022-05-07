@@ -209,8 +209,8 @@ def collection_delete():
     return Response(response=json.dumps({'user_id': user_id}), status=200, headers=utils.COMMON_HEADER_RESPONSE)
 
 
-@app.route('/collection_name', methods=['PATCH'])
-def collections_name_update():
+@app.route('/rename_collection', methods=['PATCH'])
+def collection_rename():
     """
     updates user's collection name
     3 parameters:
