@@ -114,9 +114,9 @@ def get_categories():
     return {"categories": categories}
 
 
-##############################################################################################
-# UPDATE UPDATE UPDATE UPDATE UPDATE UPDATE UPDATE UPDATE UPDATE UPDATE UPDATE UPDATE UPDATE #
-##############################################################################################
+####################################################################################################################
+# UPDATE UPDATE UPDATE UPDATE UPDATE UPDATE UPDATE UPDATE UPDATE UPDATE UPDATE UPDATE UPDATE  UPDATE UPDATE UPDATE #
+####################################################################################################################
 @app.route('/collections', methods=['GET'])
 def get_collections():
     """
@@ -153,13 +153,12 @@ def create_collection():
         collection_name = utils.get_post_data('collection_name')
     except Exception as r:
         return Response(eval(str(r)))
-    collection_object = objects.PrivateCollectionObject(user_id, collection_name, query_id)
     if privateCollectionsTable.is_collection_exists(user_id, collection_name):
         print('exists')
-        return Response(response=json.dumps({'user_id': collection_object.user_id}), status=400,
-                        headers=utils.COMMON_HEADER_RESPONSE)
+        return Response(response=json.dumps({'user_id': user_id}), status=400, headers=utils.COMMON_HEADER_RESPONSE)
     else:
         print('not exists')
+        collection_object = objects.PrivateCollectionObject(user_id, collection_name, query_id)
         privateCollectionsTable.insert(collection_object)
         return Response(response=json.dumps({'user_id': collection_object.user_id}), status=200,
                         headers=utils.COMMON_HEADER_RESPONSE)
