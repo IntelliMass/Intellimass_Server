@@ -130,8 +130,12 @@ def get_collections():
     private_collection_table_object = privateCollectionsTable.get(user_id, id_var="user_id")
     print(f'private_collection_table_object: {private_collection_table_object}')
     sessions_table_object = sessionsTable.get(private_collection_table_object["query_id"])
-    articles = utils.extract_articles_from_session_db(sessions_table_object, private_collection_table_object.article_list)
-    collection_json = utils.collection_to_json(private_collection_table_object)
+    # articles = utils.extract_articles_from_session_db(sessions_table_object,
+    #                                                   private_collection_table_object.article_list)
+    articles = utils.extract_articles_from_session_db(sessions_table_object,
+                                                      private_collection_table_object['article_list'])
+    # collection_json = utils.collection_to_json(private_collection_table_object)
+    collection_json = utils.collection_to_json(articles)
     return {"collection": collection_json}
 
 
@@ -145,15 +149,17 @@ def create_collection():
     :return: 200/400
     """
     try:
-        user_id = utils.get_query_params('user_id')
-        collection_name, query_id = utils.get_post_data('collection_name', 'query_id')
+        user_id, query_id = utils.get_query_params('user_id', 'query_id')
+        collection_name = utils.get_post_data('collection_name')
     except Exception as r:
         return Response(eval(str(r)))
     collection_object = objects.PrivateCollectionObject(user_id, collection_name, query_id)
     if privateCollectionsTable.is_collection_exists(user_id, collection_name):
+        print('exists')
         return Response(response=json.dumps({'user_id': collection_object.user_id}), status=400,
                         headers=utils.COMMON_HEADER_RESPONSE)
     else:
+        print('not exists')
         privateCollectionsTable.insert(collection_object)
         return Response(response=json.dumps({'user_id': collection_object.user_id}), status=200,
                         headers=utils.COMMON_HEADER_RESPONSE)
