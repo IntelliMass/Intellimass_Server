@@ -183,8 +183,8 @@ def insert_article():
     return Response(response=json.dumps({'user_id': user_id}), status=200, headers=utils.COMMON_HEADER_RESPONSE)
 
 
-@app.route('/update_delete', methods=['PATCH'])
-def update_delete():
+@app.route('/pop_article', methods=['PATCH'])
+def pop_article():
     """
     deletes article from user's collection
     3 parameters:
