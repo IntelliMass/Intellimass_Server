@@ -160,6 +160,8 @@ def get_categories(articles_df: pd.DataFrame):
 
 
 def collection_to_json(private_collection_object: pd.DataFrame):
+    if (type(private_collection_object)is dict):
+        return private_collection_object 
     return private_collection_object.to_dict('collection_name')
 
 

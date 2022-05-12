@@ -29,14 +29,34 @@ class MongoDB:
         delete_filter = {id_var: id_to_delete}
         self.__db.delete_one(delete_filter)
 
+    ###########################################################################################
+    # FIX FIX FIX FIX FIX FIX FIX FIX FIX FIX FIX FIX FIX FIX FIX FIX FIX FIX FIX FIX FIX FIX #
+    ###########################################################################################
     def get_article(self, query_id: str, article_id: str):
-        obj = list(self.__db.find_one({'id': query_id, 'article_id': article_id}))
+        obj = self.__db.find_one({}, {'id': query_id, 'paperId': article_id})
         return obj
 
+    def update_paper(self, id_to_update: str, collection_name: str, object_to_update: str):
+        update_filter = {'user_id': id_to_update, "collection_name": collection_name} 
+        set_params = {'articles_list': object_to_update}      
+        self.__db.update_one(update_filter, {'$push': set_params})
+
+    def pop_paper(self, id_to_pop: str, collection_name: str, object_to_pop: str):
+        update_filter = {'user_id': id_to_pop, "collection_name": collection_name} 
+        set_params = {'articles_list': object_to_pop}      
+        self.__db.update_one(update_filter, {'$pull': set_params})
 
 class SessionDB(MongoDB):
     def __init__(self):
         super().__init__("sessions")
+
+    def get_article_paperid(self, query_id: str, article_id: str):
+        temp = self._MongoDB__db.find_one({'id': query_id}, {'paperId': article_id})
+        # obj = list(self._MongoDB__db.find_one({'id': query_id, 'paperId': article_id}))
+        print(f'temp: {temp}')
+        obj = list(temp)
+        print(f'obj: {obj}')
+        return obj
 
 
 class PrivateCollectionsDB(MongoDB):

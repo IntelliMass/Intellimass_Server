@@ -117,6 +117,7 @@ def get_categories():
 ####################################################################################################################
 # UPDATE UPDATE UPDATE UPDATE UPDATE UPDATE UPDATE UPDATE UPDATE UPDATE UPDATE UPDATE UPDATE  UPDATE UPDATE UPDATE #
 ####################################################################################################################
+# Works but need to fix the get article
 @app.route('/collections', methods=['GET'])
 def get_collections():
     """
@@ -129,16 +130,18 @@ def get_collections():
     print(f'user_id: {user_id}')
     private_collection_table_object = privateCollectionsTable.get(user_id, id_var="user_id")
     print(f'private_collection_table_object: {private_collection_table_object}')
-    sessions_table_object = sessionsTable.get(private_collection_table_object["query_id"])
+    private_collection_table_object["_id"] = str(private_collection_table_object["_id"])
+    # sessions_table_object = sessionsTable.get(private_collection_table_object["query_id"])
     # articles = utils.extract_articles_from_session_db(sessions_table_object,
     #                                                   private_collection_table_object.article_list)
-    articles = utils.extract_articles_from_session_db(sessions_table_object,
-                                                      private_collection_table_object['article_list'])
+    # articles = utils.extract_articles_from_session_db(sessions_table_object,
+                                                    #   private_collection_table_object['article_list'])
     # collection_json = utils.collection_to_json(private_collection_table_object)
-    collection_json = utils.collection_to_json(articles)
+    # collection_json = utils.collection_to_json(articles)
+    collection_json = utils.collection_to_json(private_collection_table_object)
     return {"collection": collection_json}
 
-
+# Works
 @app.route('/create_collection', methods=['POST'])
 def create_collection():
     """
@@ -150,20 +153,23 @@ def create_collection():
     """
     try:
         user_id, query_id = utils.get_query_params('user_id', 'query_id')
-        collection_name = utils.get_post_data('collection_name')
+        collection_name = utils.get_post_data('collection_name')[0]
+        print(f'collection_name {collection_name}')
     except Exception as r:
         return Response(eval(str(r)))
     if privateCollectionsTable.is_collection_exists(user_id, collection_name):
-        print('exists')
-        return Response(response=json.dumps({'user_id': user_id}), status=400, headers=utils.COMMON_HEADER_RESPONSE)
+        print('collection exists')
+        return Response(response=json.dumps({'user_id': user_id, 'status': 400}), status=400, headers=utils.COMMON_HEADER_RESPONSE)
     else:
-        print('not exists')
+        print('creating collection')
         collection_object = objects.PrivateCollectionObject(user_id, collection_name, query_id)
+        print(f'collection_object: {collection_object.user_id}, {collection_object.query_id}, {collection_object.collection_name}, {collection_object.articles_list}')
         privateCollectionsTable.insert(collection_object)
-        return Response(response=json.dumps({'user_id': collection_object.user_id}), status=200,
+        return Response(response=json.dumps({'user_id': collection_object.user_id, 'status': 200}), status=200,
                         headers=utils.COMMON_HEADER_RESPONSE)
 
 
+# Works but need to fix get article
 # @app.route('/update_insert', methods=['PATCH'])
 @app.route('/insert_article', methods=['PATCH'])
 # def update_insert():
@@ -175,14 +181,19 @@ def insert_article():
         article_id: to insert it to the collection
     :return: 200/400
     """
-    user_id = utils.get_query_params('user_id')
-    collection_name, query_id, article_id = utils.get_post_data('collection_name', 'query_id', 'article_id')
-    article_obj = sessionsTable.get_article(query_id, article_id)
-    privateCollectionsTable.update({'user_id': user_id, 'collection_name': collection_name},
-                                   {'$push': {'articles_list': article_obj}})
+    user_id, query_id = utils.get_query_params('user_id', 'query_id')
+    collection_name, article_id = utils.get_post_data('collection_name', 'article_id')
+    print(f'collection_name: {collection_name}, article_id: {article_id}')
+    # article_obj = sessionsTable.get_article_paperid(query_id, article_id)
+    articles_obj = sessionsTable.get_article(query_id, article_id)
+    print(f'articles_obj: {articles_obj}')
+    # privateCollectionsTable.update({'user_id': user_id, 'collection_name': collection_name},
+    #                                {'$push': {'articles_list': article_obj}})
+    privateCollectionsTable.update_paper(user_id, collection_name, article_id)
     return Response(response=json.dumps({'user_id': user_id}), status=200, headers=utils.COMMON_HEADER_RESPONSE)
 
 
+# Works, add query_id
 @app.route('/pop_article', methods=['PATCH'])
 def pop_article():
     """
@@ -192,14 +203,15 @@ def pop_article():
         article_id: to delete the article from the collection
     :return: 200/400
     """
-    user_id = utils.get_query_params('user_id')
-
+    user_id, query_id = utils.get_query_params('user_id', 'query_id')
     collection_name, article_id = utils.get_post_data('collection_name', 'article_id')
-    privateCollectionsTable.update({'user_id': user_id, 'collection_name': collection_name},
-                                   {'$pull': {'articles_id': article_id}})
+    # privateCollectionsTable.update({'user_id': user_id, 'collection_name': collection_name},
+                                #    {'$pull': {'articles_id': article_id}})
+    privateCollectionsTable.pop_paper(user_id, collection_name, article_id)
     return Response(response=json.dumps({'user_id': user_id}), status=200, headers=utils.COMMON_HEADER_RESPONSE)
 
 
+# Add query_id, add function for private collection table
 @app.route('/collection_delete', methods=['DELETE'])
 def collection_delete():
     """
@@ -208,12 +220,13 @@ def collection_delete():
         user_id, collection_name: to delete user's collection
     :return: 200/400
     """
-    user_id = utils.get_query_params('user_id')
+    user_id, query_id = utils.get_query_params('user_id', 'query_id')
     collection_name = utils.get_post_data('collection_name')
     privateCollectionsTable.delete({'user_id': user_id, 'collection_name': collection_name})
     return Response(response=json.dumps({'user_id': user_id}), status=200, headers=utils.COMMON_HEADER_RESPONSE)
 
 
+# Check
 @app.route('/rename_collection', methods=['PATCH'])
 def collection_rename():
     """
