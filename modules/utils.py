@@ -5,6 +5,7 @@ import json
 import math
 import pandas as pd
 from modules import algorithms
+from modules.algorithms.frequentWords import append as append_frequent_words
 from modules.db.objects import SessionObject, PrivateCollectionObject
 from modules.db import sessionsTable, privateCollectionsTable
 from modules.thirdParty.semanticScholar import SemanticScholarAPI
@@ -36,8 +37,6 @@ def roundup(x: int):
 def get_post_data(*argv):
     """
     Extract post body by given *argv
-    :param argv: Keys to extract from post body
-    :return: Post Data -> tuple
     """
     data = []
     for key in argv:
@@ -49,6 +48,18 @@ def get_post_data(*argv):
     return tuple(data)
 
 
+def filters_parser(filters):
+    """
+    Extract filters from query separated by %%
+    """
+    filters = filters.split('%%')
+    filters_array = []
+    for filter in filters:
+        filter = filter.split('=')
+        filters_array.append((filter[0], filter[1]))
+    return filters_array
+
+
 def get_query_params(*argv):
     """
     Extract query params from GET request
@@ -56,9 +67,12 @@ def get_query_params(*argv):
     data = []
     for key in argv:
         extractedKey = request.args.get(key)
-        if (key == 'filterFeature' or key == 'filterList') and \
+        if key == 'filters' and \
                 (extractedKey is None or extractedKey == [] or extractedKey == ""):
             data.append(None)
+            continue
+        if key == 'filters':
+            data.append(filters_parser(extractedKey))
             continue
         if extractedKey is None:
             raise Exception(f"response='Bad Request - {key}', status=400, \
@@ -77,18 +91,22 @@ def clean_articles_df(articles_df: pd.DataFrame):
     articles_df.dropna(subset=["abstract"], inplace=True)
     return articles_df
 
-
 def article_extender(articles_df: pd.DataFrame, query: str):
     """
     Extend articles DataFrame with frequent words & clusters (topics)
     """
     articles_df = clean_articles_df(articles_df)
-    articles_df = algorithms.frequentWords.append(articles_df, query)
-    articles_df = algorithms.kmeans_lda.LdaModeling(articles_df).papers
+    articles_df = append_frequent_words(articles_df, query)
+    lda_modeling = algorithms.kmeans_lda.LdaModeling(articles_df)
+    articles_df = lda_modeling.papers
     return articles_df
 
 
 def handle_articles_count(session_object: dict, count: int):
+    """
+    Return articles DataFrame by given count,
+    if count bigger than articles exist app will extend the articles DataFrame.
+    """
     count = int(count)
     session_object["articles"] = pd.DataFrame(session_object["articles"])
     if count > len(session_object["articles"]):
@@ -99,19 +117,33 @@ def handle_articles_count(session_object: dict, count: int):
     return session_object["articles"][:count]
 
 
-def filter_articles_by_feature(articles_df: pd.DataFrame, filter_feature: str, filter_list: list):
-    if filter_feature is None or filter_list is None:
+def filter_articles_by_features(articles_df: pd.DataFrame, filters: list):
+    """
+    Filter articles DataFrame by list of filters,
+    filters contains tuples of (filter feature, filter)
+    """
+    if filters is None or filters == []:
         return articles_df
 
-    def any_wrapper(row, filterFeature, filterList):
-        def list_to_lower_case(array: list): return [word.lower() for word in array]
+    def common_filter(row, filter_feature, filter):
+        return filter in row[filter_feature]
 
-        return any(freqWord in list_to_lower_case(row[filterFeature]) for freqWord in list_to_lower_case(filterList))
+    def filter_authors(row, author):
+        return author in [author['name'] for author in row['authors']]
 
-    return articles_df[articles_df.apply(any_wrapper, axis=1, args=(filter_feature, filter_list))]
+    for filter_feature, filter in filters:
+        if filter_feature.lower() == 'authors':
+            articles_df = articles_df[articles_df.apply(filter_authors, axis=1, args=(filter,))]
+        else:
+            articles_df = articles_df[articles_df.apply(common_filter, axis=1, args=(filter_feature, filter))]
+
+    return articles_df
 
 
 def articles_to_json(articles_df: pd.DataFrame):
+    """
+    Return article objects list
+    """
     return articles_df.to_dict('records')
 
 
@@ -145,7 +177,6 @@ def get_metadata(articles_df: pd.DataFrame):
     most_common_authors = [{"title": k, "rank": v} for k, v in sorted(most_common_authors.items(),
                                                                       key=lambda item: item[1], reverse=True)[
                                                                :MAX_COMMON_FEATURE]]
-
     return {
         "common_words": most_common_frequent_words,
         "fields_of_study": most_common_fields_of_study,
@@ -155,8 +186,8 @@ def get_metadata(articles_df: pd.DataFrame):
     }
 
 
-def get_categories(articles_df: pd.DataFrame):
-    return list(set((articles_df['categories'])))
+def get_clusters(articles_df: pd.DataFrame):
+    return list(set((articles_df['clusters'])))
 
 
 def collection_to_json(private_collection_object: pd.DataFrame):

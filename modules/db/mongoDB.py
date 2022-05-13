@@ -44,11 +44,18 @@ class PrivateCollectionsDB(MongoDB):
         super().__init__("private_Collections")
 
     def is_collection_exists(self, id_to_get: str, collection_name: str):
-        objects = list(self.__db.find({'user_id': id_to_get, 'collection_name': collection_name}))
+        # objects = list(self.__db.find({'user_id': id_to_get, 'collection_name': collection_name}))
+        objects = list(self._MongoDB__db.find({'user_id': id_to_get, 'collection_name': collection_name}))
         if objects:
             return True
         else:
             return False
+
+    def replace(self, id_to_get: str, field_to_find: str, field_to_replace: str):
+        myquery = {"user_id": id_to_get, "collection_name": field_to_find}
+        new_values = {"$set": {"collection_name": field_to_replace}}
+        # self.__db.update_one(myquery, new_values)
+        self._MongoDB__db.update_one(myquery, new_values)
 
 
 sessionsTable = SessionDB()
