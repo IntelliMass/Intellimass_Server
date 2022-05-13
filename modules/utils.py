@@ -46,6 +46,8 @@ def get_post_data(*argv):
             raise Exception(f"Response(response='Bad Request - {key}', status=400, \
                            headers=COMMON_HEADER_RESPONSE)")
         data.append(extractedKey)
+    if len(data) == 1:
+        return data
     return tuple(data)
 
 
