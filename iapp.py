@@ -148,15 +148,11 @@ def get_collections():
     user_id = utils.get_query_params('user_id')
     print(f'user_id: {user_id}')
     private_collection_table_object = privateCollectionsTable.get(user_id, id_var="user_id")
-    print(f'private_collection_table_object: {private_collection_table_object}')
-    sessions_table_object = sessionsTable.get(private_collection_table_object["query_id"])
-    # articles = utils.extract_articles_from_session_db(sessions_table_object,
-    #                                                   private_collection_table_object.article_list)
-    articles = utils.extract_articles_from_session_db(sessions_table_object,
-                                                      private_collection_table_object['article_list'])
-    # collection_json = utils.collection_to_json(private_collection_table_object)
-    collection_json = utils.collection_to_json(articles)
-    return {"collection": collection_json}
+    del private_collection_table_object['_id']
+    del private_collection_table_object['user_id']
+    del private_collection_table_object['query_id']
+    array_of_collections = [private_collection_table_object]
+    return {"collection": array_of_collections}
 
 
 @app.route('/create_collection', methods=['POST'])
