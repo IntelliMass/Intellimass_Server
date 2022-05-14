@@ -143,3 +143,4 @@ def main():
     lda_temp = LdaModeling(path_json)
     topic_list = lda_temp.topics_list
     print(topic_list)
+    
