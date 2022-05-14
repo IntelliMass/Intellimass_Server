@@ -142,13 +142,14 @@ def get_collections():
         user_id: to get user's collections
     :return: 200/400
     """
-    user_id, query_id = utils.get_query_params('user_id', 'query_id')
-    print(f'user_id: {user_id}, query_id: {query_id}')
+    user_id = utils.get_query_params('user_id')
+    print(f'get_collection -> user_id: {user_id}')
     private_collection_table_object = privateCollectionsTable.get(user_id, id_var="user_id")
-    print(f'private_collection_table_object: {private_collection_table_object}')
-    private_collection_table_object["_id"] = str(private_collection_table_object["_id"])
-    collection_json = utils.collection_to_json(private_collection_table_object)
-    return {"collection": collection_json}
+    del private_collection_table_object['_id']
+    del private_collection_table_object['user_id']
+    del private_collection_table_object['query_id']
+    array_of_collections = [private_collection_table_object]
+    return {"collection": array_of_collections}
 
 
 # Works
@@ -162,7 +163,7 @@ def create_collection():
     :return: 200/400
     """
     try:
-        user_id, query_id = utils.get_query_params('user_id', 'query_id')
+        user_id = utils.get_query_params('user_id')
         collection_name = utils.get_post_data('collection_name')[0]
         print(f'collection_name {collection_name}')
     except Exception as r:
@@ -172,8 +173,8 @@ def create_collection():
         return Response(response=json.dumps({'user_id': user_id, 'status': 400}), status=400, headers=utils.COMMON_HEADER_RESPONSE)
     else:
         print('creating collection')
-        collection_object = objects.PrivateCollectionObject(user_id, collection_name, query_id)
-        print(f'collection_object: {collection_object.user_id}, {collection_object.query_id}, {collection_object.collection_name}, {collection_object.articles_list}')
+        collection_object = objects.PrivateCollectionObject(user_id, collection_name)
+        print(f'collection_object: {collection_object.user_id}, {collection_object.collection_name}, {collection_object.articles_list}')
         privateCollectionsTable.insert(collection_object)
         return Response(response=json.dumps({'user_id': collection_object.user_id, 'status': 200}), status=200,
                         headers=utils.COMMON_HEADER_RESPONSE)
@@ -208,9 +209,9 @@ def pop_article():
         article_id: to delete the article from the collection
     :return: 200/400
     """
-    user_id, query_id = utils.get_query_params('user_id', 'query_id')
+    user_id = utils.get_query_params('user_id')
     collection_name, article_id = utils.get_post_data('collection_name', 'article_id')
-    privateCollectionsTable.pop_paper(user_id, query_id, collection_name, article_id)
+    privateCollectionsTable.pop_paper(user_id, collection_name, article_id)
     return Response(response=json.dumps({'user_id': user_id}), status=200, headers=utils.COMMON_HEADER_RESPONSE)
 
 
@@ -223,12 +224,12 @@ def collection_delete():
         user_id, collection_name: to delete user's collection
     :return: 200/400
     """
-    user_id, query_id = utils.get_query_params('user_id', 'query_id')
+    user_id = utils.get_query_params('user_id')
     collection_name = utils.get_post_data('collection_name')
     collection_name = str(collection_name[0])
     print(f'collection_name: {collection_name}')
     print(f'collection_name: {type(collection_name)}')
-    privateCollectionsTable.delete_collection(user_id, query_id, collection_name)
+    privateCollectionsTable.delete_collection(user_id, collection_name)
     return Response(response=json.dumps({'user_id': user_id}), status=200, headers=utils.COMMON_HEADER_RESPONSE)
 
 
@@ -242,27 +243,9 @@ def collection_rename():
         collection_name, new_collection: to find the collection and replace the name
     :return: 200/400
     """
-    user_id, query_id = utils.get_query_params('user_id', 'query_id')
-    current_collection, new_collection = utils.get_post_data('collection_name', 'new_collection')
-    privateCollectionsTable.replace(user_id, current_collection, new_collection)
-    return Response(response=json.dumps({'user_id': user_id}), status=200, headers=utils.COMMON_HEADER_RESPONSE)
-
-
-@app.route('/rename_collection', methods=['PATCH'])
-def collection_rename():
-    """
-    updates user's collection name
-    3 parameters:
-        user_id: to locate user's collection
-        collection_name, new_collection: to find the collection and replace the name
-    :return: 200/400
-    """
     user_id = utils.get_query_params('user_id')
     current_collection, new_collection = utils.get_post_data('collection_name', 'new_collection')
-    try:
-        privateCollectionsTable.replace(user_id, current_collection, new_collection)
-    except Exception as r:
-        return Response(eval(str(r)))
+    privateCollectionsTable.replace(user_id, current_collection, new_collection)
     return Response(response=json.dumps({'user_id': user_id}), status=200, headers=utils.COMMON_HEADER_RESPONSE)
 
 

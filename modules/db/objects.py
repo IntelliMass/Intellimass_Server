@@ -21,8 +21,7 @@ class SessionObject(object):
 
 
 class PrivateCollectionObject(object):
-    def __init__(self, user_id: str, collection_name: str, query_id: str):
+    def __init__(self, user_id: str, collection_name: str):
         self.user_id = user_id
         self.collection_name = collection_name
-        self.query_id = query_id
         self.articles_list = []

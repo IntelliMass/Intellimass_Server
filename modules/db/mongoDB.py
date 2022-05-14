@@ -34,8 +34,8 @@ class MongoDB:
         set_params = {'articles_list': object_to_update}      
         self.__db.update_one(update_filter, {'$push': set_params})
 
-    def pop_paper(self, id_to_pop: str, query_id: str, collection_name: str, object_to_pop: str):
-        update_filter = {'user_id': id_to_pop, "query_id": query_id, "collection_name": collection_name}
+    def pop_paper(self, id_to_pop: str, collection_name: str, object_to_pop: str):
+        update_filter = {'user_id': id_to_pop, "collection_name": collection_name}
         set_params = {'articles_list': object_to_pop}      
         self.__db.update_one(update_filter, {'$pull': set_params})
 
@@ -70,8 +70,8 @@ class PrivateCollectionsDB(MongoDB):
         new_values = {"$set": {"collection_name": field_to_replace}}
         self._MongoDB__db.update_one(myquery, new_values)
 
-    def delete_collection(self, id_to_delete: str, query_id: str, collection_name: str):
-        delete_filter = {"user_id": id_to_delete, "query_id": query_id, "collection_name": collection_name}
+    def delete_collection(self, id_to_delete: str, collection_name: str):
+        delete_filter = {"user_id": id_to_delete, "collection_name": collection_name}
         result = self._MongoDB__db.delete_one(delete_filter)
         print(result)
 
