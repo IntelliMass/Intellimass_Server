@@ -45,8 +45,6 @@ def get_post_data(*argv):
             raise Exception(f"Response(response='Bad Request - {key}', status=400, \
                            headers=COMMON_HEADER_RESPONSE)")
         data.append(extractedKey)
-    if len(data) == 1:
-        return data
     return tuple(data)
 
 
@@ -221,8 +219,6 @@ def get_clusters(articles_df: pd.DataFrame):
     return res
 
 def collection_to_json(private_collection_object: pd.DataFrame):
-    if (type(private_collection_object)is dict):
-        return private_collection_object 
     return private_collection_object.to_dict('collection_name')
 
 
