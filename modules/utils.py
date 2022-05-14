@@ -45,12 +45,10 @@ def get_post_data(*argv):
             raise Exception(f"Response(response='Bad Request - {key}', status=400, \
                            headers=COMMON_HEADER_RESPONSE)")
         data.append(extractedKey)
-    if len(data) == 1:
-        return data
     return tuple(data)
 
 
-def filters_parser(filters):
+def filters_parser(filters: str):
     """
     Extract filters from query separated by %%
     """
@@ -62,6 +60,15 @@ def filters_parser(filters):
     return filters_array
 
 
+def clusters_parser(clusters: str):
+    """
+    Extract filters from query separated by %%
+    """
+    if clusters is None or clusters == "":
+        return None
+    return clusters.split('%%')
+
+
 def get_query_params(*argv):
     """
     Extract query params from GET request
@@ -69,17 +76,20 @@ def get_query_params(*argv):
     data = []
     for key in argv:
         extractedKey = request.args.get(key)
+        print(key, extractedKey)
         if key == 'filters' and \
                 (extractedKey is None or extractedKey == [] or extractedKey == ""):
-            data.append(None)
-            continue
-        if key == 'filters':
-            data.append(filters_parser(extractedKey))
-            continue
-        if extractedKey is None:
-            raise Exception(f"response='Bad Request - {key}', status=400, \
-                            headers={'Access-Control-Allow-Origin': '*'}")
+            extractedKey = None
+        elif key == 'filters':
+            extractedKey = filters_parser(extractedKey)
+        elif key == 'clusters':
+            extractedKey = clusters_parser(extractedKey)
+        elif key == 'numOfClusters':
+            extractedKey = int(extractedKey)
+        elif extractedKey is None or extractedKey == '':
+            raise Exception(f"Response(response='Bad Request - {key}', status=400, headers={COMMON_HEADER_RESPONSE})")
         data.append(extractedKey)
+    print(data)
     if len(data) == 1:
         return data[0]
     return tuple(data)
@@ -93,13 +103,21 @@ def clean_articles_df(articles_df: pd.DataFrame):
     articles_df.dropna(subset=["abstract"], inplace=True)
     return articles_df
 
+
 def article_extender(articles_df: pd.DataFrame, query: str):
     """
     Extend articles DataFrame with frequent words & clusters (topics)
     """
     articles_df = clean_articles_df(articles_df)
     articles_df = append_frequent_words(articles_df, query)
-    lda_modeling = algorithms.kmeans_lda.LdaModeling(articles_df)
+    return articles_df
+
+
+def cluster_articles(articles_df: pd.DataFrame, num_of_clusters=4):
+    """
+    Use K-Means clustering algorithm & NLP's LDA algorithm for give for each cluster unique name
+    """
+    lda_modeling = algorithms.kmeans_lda.LdaModeling(articles_df, num_of_clusters)
     articles_df = lda_modeling.papers
     return articles_df
 
@@ -119,13 +137,17 @@ def handle_articles_count(session_object: dict, count: int):
     return session_object["articles"][:count]
 
 
-def filter_articles_by_features(articles_df: pd.DataFrame, filters: list):
+def filter_articles_by_features(articles_df: pd.DataFrame, filters: list, clusters: list):
     """
     Filter articles DataFrame by list of filters,
     filters contains tuples of (filter feature, filter)
     """
-    if filters is None or filters == []:
+    if (filters is None or filters == []) and (clusters is None or clusters == []):
         return articles_df
+
+
+
+    print(f"filters: {filters}\nclusters: {clusters}")
 
     def common_filter(row, filter_feature, filter):
         return filter in row[filter_feature]
@@ -138,6 +160,8 @@ def filter_articles_by_features(articles_df: pd.DataFrame, filters: list):
             articles_df = articles_df[articles_df.apply(filter_authors, axis=1, args=(filter,))]
         else:
             articles_df = articles_df[articles_df.apply(common_filter, axis=1, args=(filter_feature, filter))]
+
+
 
     return articles_df
 
@@ -189,12 +213,13 @@ def get_metadata(articles_df: pd.DataFrame):
 
 
 def get_clusters(articles_df: pd.DataFrame):
-    return list(set((articles_df['clusters'])))
+    # clusters = list(set((articles_df['cluster'])))
+    clusters = articles_df['cluster'].value_counts().to_dict()
+    res = [{"title": title, "rank": value} for title, value in clusters.items()]
+    return res
 
 
 def collection_to_json(private_collection_object: pd.DataFrame):
-    if (type(private_collection_object)is dict):
-        return private_collection_object 
     return private_collection_object.to_dict('collection_name')
 
 

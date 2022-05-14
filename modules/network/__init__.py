@@ -94,13 +94,10 @@ class Network:
                 if len(common_authors_in_both_articles) > 0:
                     self.network.append(
                         {
-                            "source": article1['paperId'],
-                            "target": article2['paperId'],
+                            "source": article1['title'],
+                            "target": article2['title'],
                             "value": common_authors_in_both_articles
                         }
                     )
         print(f"Title Network takes {time.time() - start} seconds")
         print(f"number of connections = {len(self.network)}")
-
-
-
