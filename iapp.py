@@ -11,6 +11,7 @@ from modules import utils
 from modules.thirdParty import SemanticScholarAPI, config
 from modules.db import sessionsTable, privateCollectionsTable, objects
 from modules.network import Network
+from modules.algorithms.kmeans_lda import clustering
 # MODULES MODULES MODULES MODULES MODULES MODULES #
 ###################################################
 
@@ -145,10 +146,12 @@ def get_collections():
     user_id, query_id = utils.get_query_params('user_id', 'query_id')
     print(f'user_id: {user_id}, query_id: {query_id}')
     private_collection_table_object = privateCollectionsTable.get(user_id, id_var="user_id")
-    print(f'private_collection_table_object: {private_collection_table_object}')
-    private_collection_table_object["_id"] = str(private_collection_table_object["_id"])
-    collection_json = utils.collection_to_json(private_collection_table_object)
-    return {"collection": collection_json}
+    # collection_json = utils.collection_to_json(private_collection_table_object)
+    del private_collection_table_object['_id']
+    del private_collection_table_object['user_id']
+    del private_collection_table_object['query_id']
+    array_of_collections = [private_collection_table_object]
+    return {"collection": array_of_collections}
 
 
 # Works
@@ -248,22 +251,21 @@ def collection_rename():
     return Response(response=json.dumps({'user_id': user_id}), status=200, headers=utils.COMMON_HEADER_RESPONSE)
 
 
-@app.route('/rename_collection', methods=['PATCH'])
-def collection_rename():
+@app.route('/clusters_get', methods=['GET'])
+def clusters_get():
     """
-    updates user's collection name
-    3 parameters:
-        user_id: to locate user's collection
-        collection_name, new_collection: to find the collection and replace the name
-    :return: 200/400
+    gets user_id and query_id and number of clusters
+    :return:
+    clusters and status 200/400
     """
-    user_id = utils.get_query_params('user_id')
-    current_collection, new_collection = utils.get_post_data('collection_name', 'new_collection')
-    try:
-        privateCollectionsTable.replace(user_id, current_collection, new_collection)
-    except Exception as r:
-        return Response(eval(str(r)))
-    return Response(response=json.dumps({'user_id': user_id}), status=200, headers=utils.COMMON_HEADER_RESPONSE)
+    user_id, num_clusters = utils.get_query_params('user_id', "num_clusters")
+    query_id = 'e0127de9-6b60-4608-81c1-9f02db68350e'
+    count = 100
+    sessions_table_object = sessionsTable.get(query_id)
+    articles_df = utils.handle_articles_count(sessions_table_object, count)
+    # articles_df = utils.filter_articles_by_features(articles_df, filters)
+    articles_json = utils.articles_to_json(articles_df)
+    clustering.start_lda(articles_json, ['iot'], num_clusters)
 
 
 if __name__ == '__main__':
