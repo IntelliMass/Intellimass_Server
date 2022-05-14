@@ -15,16 +15,14 @@ TOPICS_NUM = 1
 
 
 class LdaModeling:
-    def __init__(self, path: str, search_keyword: list):
-        self._search_keyword = search_keyword
+    def __init__(self, df_articles: pd.DataFrame, num_of_clusters=4):
         self._lda_model = None
-        self.__papers = None
+        self.__papers = df_articles
         self._dict_of_topics = {}
         self._topics_list = []
-        self._num_of_clusters = 4
+        self._num_of_clusters = num_of_clusters
         self._current_cluster = None
 
-        self.__loading_and_cleaning_data(path)
         self.__stopwords_string()
         self.__remove_punctuation_and_convert_to_lowercase()
         self.__prepare_data()
@@ -41,8 +39,8 @@ class LdaModeling:
 
     def __remove_punctuation_and_convert_to_lowercase(self):
         print("__remove_punctuation_and_convert_to_lowercase")
-        self.__papers['processed_abstract'] = self.__papers['abstract'].map(lambda x: re.sub('[,\.()!?]', '', x))
-        self.__papers['processed_abstract'] = self.__papers['processed_abstract'].map(lambda x: x.lower())
+        self.__papers.loc[:, 'processed_abstract'] = self.__papers.loc[:, 'abstract'].map(lambda x: re.sub('[,\.()!?]', '', x))
+        self.__papers.loc[:, 'processed_abstract'] = self.__papers.loc[:, 'processed_abstract'].map(lambda x: x.lower())
 
     @staticmethod
     def __sent_to_words(sentences):
@@ -62,10 +60,10 @@ class LdaModeling:
 
     def __prepare_data(self):
         print("__prepare_data")
-        self.__papers['list_abstract'] = self.__papers['processed_abstract'].apply(lambda x: x.split())
-        self.__papers['cleaned_abstract'] = self.__papers['list_abstract'].map(lambda x: self.remove_stopwords(x))
+        self.__papers.loc[:, 'list_abstract'] = self.__papers.loc[:, 'processed_abstract'].apply(lambda x: x.split())
+        self.__papers.loc[:, 'cleaned_abstract'] = self.__papers.loc[:, 'list_abstract'].map(lambda x: self.remove_stopwords(x))
         self.__papers = self.__papers.drop(labels=['processed_abstract', 'list_abstract'], axis=1)
-        self.__papers['clean_abstract_str'] = self.__papers['cleaned_abstract'].map(lambda x: " ".join(x))
+        self.__papers['clean_abstract_str'] = self.__papers.loc[:, 'cleaned_abstract'].map(lambda x: " ".join(x))
 
     def kmeans_papers(self):
         print('kmeans_papers')
@@ -74,7 +72,7 @@ class LdaModeling:
         kmeans = KMeans(n_clusters=self._num_of_clusters, random_state=42)
         kmeans.fit(x)
         clusters = kmeans.labels_
-        self.__papers['categories'] = clusters
+        self.__papers['cluster'] = clusters
 
         # initialize PCA with 2 components
         pca = PCA(n_components=2, random_state=42)
@@ -88,9 +86,9 @@ class LdaModeling:
 
     def activate_lda_training(self):
         print('activate_lda_training')
-        list_clusters_numbers = self.__papers['categories'].unique()
+        list_clusters_numbers = self.__papers['cluster'].unique()
         for num in list_clusters_numbers:
-            filtered_data = self.__papers[self.__papers["categories"] == num]
+            filtered_data = self.__papers[self.__papers["cluster"] == num]
             # Create Dictionary
             id2word = corpora.Dictionary(filtered_data['cleaned_abstract'])
             # Create Corpus
@@ -100,7 +98,7 @@ class LdaModeling:
             self._current_cluster = num
             self.__lda_model_training(corpus, id2word)
         self.__papers = self.__papers.drop(labels=['cleaned_abstract', 'clean_abstract_str', 'x0', 'x1'], axis=1)
-        # self.__papers['cluster'] = self.__papers['cluster'].apply(str.capitalize)
+        self.__papers['cluster'] = self.__papers['cluster'].apply(str.capitalize)
 
     def __lda_model_training(self, corpus, id2word, num_topic=TOPICS_NUM):
         # Build LDA model
@@ -121,9 +119,9 @@ class LdaModeling:
         temp_topic_list = sorted(self._dict_of_topics, key=self._dict_of_topics.get,
                                  reverse=True)[:self._num_of_clusters]
         for index in range(self._num_of_clusters):
-            if temp_topic_list[index] not in self._topics_list and temp_topic_list[index] not in self._search_keyword:
+            if temp_topic_list[index] not in self._topics_list:
                 self._topics_list.append(temp_topic_list[index])
-                self.__papers['categories'] = self.__papers['categories'].replace(self._current_cluster,
+                self.__papers['cluster'] = self.__papers['cluster'].replace(self._current_cluster,
                                                                                   temp_topic_list[index])
                 break
 
@@ -142,7 +140,6 @@ class LdaModeling:
 
 def main():
     path_json = './json_file/response100_IOT.json'
-    search_keyword = ['iot']
-    lda_temp = LdaModeling(path_json, search_keyword)
+    lda_temp = LdaModeling(path_json)
     topic_list = lda_temp.topics_list
     print(topic_list)
