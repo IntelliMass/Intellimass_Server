@@ -44,21 +44,13 @@ class SessionDB(MongoDB):
     def __init__(self):
         super().__init__("sessions")
 
-    def get_article_paperid(self, query_id: str, article_id: str):
-        get_filter = {'id': query_id, 'articles': {'$elemMatch': {'paperId': article_id}}}
-        found_obj = self._MongoDB__db.find_one({}, get_filter)
-        print(f'found_obj: {found_obj}')
-        del found_obj['_id']
-        return found_obj
-
-    # temp1 = {'_id': 'blabla', 'articles': [{'paperId': 'blalba', 'title': '...'}]}
-
 
 class PrivateCollectionsDB(MongoDB):
     def __init__(self):
         super().__init__("private_Collections")
 
     def is_collection_exists(self, id_to_get: str, collection_name: str):
+        # objects = list(self.__db.find({'user_id': id_to_get, 'collection_name': collection_name}))
         objects = list(self._MongoDB__db.find({'user_id': id_to_get, 'collection_name': collection_name}))
         if objects:
             return True
@@ -68,6 +60,7 @@ class PrivateCollectionsDB(MongoDB):
     def replace(self, id_to_get: str, field_to_find: str, field_to_replace: str):
         myquery = {"user_id": id_to_get, "collection_name": field_to_find}
         new_values = {"$set": {"collection_name": field_to_replace}}
+        # self.__db.update_one(myquery, new_values)
         self._MongoDB__db.update_one(myquery, new_values)
 
     def delete_collection(self, id_to_delete: str, collection_name: str):
