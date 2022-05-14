@@ -170,23 +170,20 @@ def create_collection():
         print(f'collection_name {collection_name}')
     except Exception as r:
         return Response(eval(str(r)))
-    collection_object = objects.PrivateCollectionObject(user_id, collection_name, query_id)
     if privateCollectionsTable.is_collection_exists(user_id, collection_name):
         print('exists')
-        return Response(response=json.dumps({'user_id': collection_object.user_id}), status=400,
+        return Response(response=json.dumps({'user_id': user_id}), status=400,
                         headers=utils.COMMON_HEADER_RESPONSE)
     else:
         print('creating collection')
         collection_object = objects.PrivateCollectionObject(user_id, collection_name)
         print(f'collection_object: {collection_object.user_id}, {collection_object.collection_name}, {collection_object.articles_list}')
         privateCollectionsTable.insert(collection_object)
-        return Response(response=json.dumps({'user_id': collection_object.user_id}), status=200,
+        return Response(response=json.dumps({'user_id': collection_object.user_id, 'status': 200}), status=200,
                         headers=utils.COMMON_HEADER_RESPONSE)
 
 
-# @app.route('/update_insert', methods=['PATCH'])
 @app.route('/insert_article', methods=['PATCH'])
-# def update_insert():
 def insert_article():
     """
     insert to existing collection by user an article
@@ -195,16 +192,17 @@ def insert_article():
         article_id: to insert it to the collection
     :return: 200/400
     """
-    user_id = utils.get_query_params('user_id')
-    collection_name, query_id, article_id = utils.get_post_data('collection_name', 'query_id', 'article_id')
-    article_obj = sessionsTable.get_article(query_id, article_id)
-    privateCollectionsTable.update({'user_id': user_id, 'collection_name': collection_name},
-                                   {'$push': {'articles_list': article_obj}})
+    user_id, query_id = utils.get_query_params('user_id', 'query_id')
+    collection_name, article_id = utils.get_post_data('collection_name', 'article_id')
+    print(f'collection_name: {collection_name}, article_id: {article_id}')
+    articles_obj = sessionsTable.get_article_paperid(query_id, article_id)
+    print(f'articles_obj: {articles_obj}')
+    privateCollectionsTable.update_paper(user_id, collection_name, articles_obj['articles'][0])
     return Response(response=json.dumps({'user_id': user_id}), status=200, headers=utils.COMMON_HEADER_RESPONSE)
 
 
-@app.route('/update_delete', methods=['PATCH'])
-def update_delete():
+@app.route('/pop_article', methods=['PATCH'])
+def pop_article():
     """
     deletes article from user's collection
     3 parameters:
