@@ -39,8 +39,8 @@ class LdaModeling:
 
     def __remove_punctuation_and_convert_to_lowercase(self):
         print("__remove_punctuation_and_convert_to_lowercase")
-        self.__papers['processed_abstract'] = self.__papers['abstract'].map(lambda x: re.sub('[,\.()!?]', '', x))
-        self.__papers['processed_abstract'] = self.__papers['processed_abstract'].map(lambda x: x.lower())
+        self.__papers.loc[:, 'processed_abstract'] = self.__papers.loc[:, 'abstract'].map(lambda x: re.sub('[,\.()!?]', '', x))
+        self.__papers.loc[:, 'processed_abstract'] = self.__papers.loc[:, 'processed_abstract'].map(lambda x: x.lower())
 
     @staticmethod
     def __sent_to_words(sentences):
@@ -60,10 +60,10 @@ class LdaModeling:
 
     def __prepare_data(self):
         print("__prepare_data")
-        self.__papers['list_abstract'] = self.__papers['processed_abstract'].apply(lambda x: x.split())
-        self.__papers['cleaned_abstract'] = self.__papers['list_abstract'].map(lambda x: self.remove_stopwords(x))
+        self.__papers.loc[:, 'list_abstract'] = self.__papers.loc[:, 'processed_abstract'].apply(lambda x: x.split())
+        self.__papers.loc[:, 'cleaned_abstract'] = self.__papers.loc[:, 'list_abstract'].map(lambda x: self.remove_stopwords(x))
         self.__papers = self.__papers.drop(labels=['processed_abstract', 'list_abstract'], axis=1)
-        self.__papers['clean_abstract_str'] = self.__papers['cleaned_abstract'].map(lambda x: " ".join(x))
+        self.__papers['clean_abstract_str'] = self.__papers.loc[:, 'cleaned_abstract'].map(lambda x: " ".join(x))
 
     def kmeans_papers(self):
         print('kmeans_papers')

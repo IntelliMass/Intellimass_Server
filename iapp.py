@@ -48,6 +48,7 @@ def query():
         return res
     raw_articles = SemanticScholarAPI.get_articles(query)
     extended_articles = utils.article_extender(raw_articles, query)
+    extended_articles = utils.cluster_articles(extended_articles)
     object = objects.SessionObject(query, extended_articles, config.Defaults.numOfArticles_firstSearch)
     sessionsTable.insert(object)
 
@@ -60,14 +61,20 @@ def query():
 
 @app.route('/articles', methods=['GET'])
 def get_articles():
-
+    """
+    Steps:
+        1.
+    :return:
+    """
     try:
-        (query_id, count, filters) = utils.get_query_params('id', 'count', 'filters', 'clusters', 'numOfClusters')
+        (query_id, count, filters, clusters, num_of_clusters) = utils.get_query_params('id', 'count', 'filters',
+                                                                                       'clusters', 'numOfClusters')
     except Exception as ex:
         return eval(str(ex))
     sessions_table_object = sessionsTable.get(query_id)
     articles_df = utils.handle_articles_count(sessions_table_object, count)
-    articles_df = utils.filter_articles_by_features(articles_df, filters)
+    articles_df = utils.filter_articles_by_features(articles_df, filters, clusters)
+    articles_df = utils.cluster_articles(articles_df, num_of_clusters)
     articles_json = utils.articles_to_json(articles_df)
     return Response(response=json.dumps({"articles": articles_json}), status=200, headers=utils.COMMON_HEADER_RESPONSE)
 
@@ -75,12 +82,13 @@ def get_articles():
 @app.route('/metadata', methods=['GET'])
 def get_metadata():
     try:
-        (query_id, count, filters) = utils.get_query_params('id', 'count', 'filters', 'clusters', 'numOfClusters')
+        (query_id, count, filters, clusters, num_of_clusters) = utils.get_query_params('id', 'count', 'filters', 'clusters', 'numOfClusters')
     except Response as res:
         return res
     sessions_table_object = sessionsTable.get(query_id)
     articles_df = utils.handle_articles_count(sessions_table_object, count)
-    articles_df = utils.filter_articles_by_features(articles_df, filters)
+    articles_df = utils.filter_articles_by_features(articles_df, filters, clusters)
+    articles_df = utils.cluster_articles(articles_df, num_of_clusters)
     metadata = utils.get_metadata(articles_df)
     return {"metadata": metadata}
 
@@ -88,12 +96,13 @@ def get_metadata():
 @app.route('/network', methods=['GET'])
 def get_network():
     try:
-        (query_id, count, filters, feature) = utils.get_query_params('id', 'count', 'filters', 'feature', 'clusters', 'numOfClusters')
+        (query_id, count, filters, feature, clusters, num_of_clusters) = utils.get_query_params('id', 'count', 'filters', 'feature', 'clusters', 'numOfClusters')
     except Response as res:
         return res
     sessions_table_object = sessionsTable.get(query_id)
     articles_df = utils.handle_articles_count(sessions_table_object, count)
-    articles_df = utils.filter_articles_by_features(articles_df, filters)
+    articles_df = utils.filter_articles_by_features(articles_df, filters, clusters)
+    articles_df = utils.cluster_articles(articles_df, num_of_clusters)
     try:
         network = Network(articles_df, feature)
         links_list = network.get_network()
@@ -111,10 +120,11 @@ def get_one():
 
 @app.route('/clusters', methods=['GET'])
 def get_clusters():
-    (query_id, count, filters) = utils.get_query_params('id', 'count', 'filters', 'clusters', 'numOfClusters')
+    (query_id, count, filters, clusters, num_of_clusters) = utils.get_query_params('id', 'count', 'filters', 'clusters', 'numOfClusters')
     sessions_table_object = sessionsTable.get(query_id)
     articles_df = utils.handle_articles_count(sessions_table_object, count)
-    articles_df = utils.filter_articles_by_features(articles_df, filters)
+    articles_df = utils.filter_articles_by_features(articles_df, filters, clusters)
+    articles_df = utils.cluster_articles(articles_df, num_of_clusters)
     clusters = utils.get_clusters(articles_df)
     return {"clusters": clusters}
 
