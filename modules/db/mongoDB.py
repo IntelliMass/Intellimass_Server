@@ -29,9 +29,15 @@ class MongoDB:
         delete_filter = {id_var: id_to_delete}
         self.__db.delete_one(delete_filter)
 
-    def get_article(self, query_id: str, article_id: str):
-        obj = list(self.__db.find_one({'id': query_id, 'article_id': article_id}))
-        return obj
+    def update_paper(self, id_to_update: str, collection_name: str, object_to_update: str):
+        update_filter = {'user_id': id_to_update, "collection_name": collection_name} 
+        set_params = {'articles_list': object_to_update}      
+        self.__db.update_one(update_filter, {'$push': set_params})
+
+    def pop_paper(self, id_to_pop: str, collection_name: str, object_to_pop: str):
+        update_filter = {'user_id': id_to_pop, "collection_name": collection_name}
+        set_params = {'articles_list': object_to_pop}      
+        self.__db.update_one(update_filter, {'$pull': set_params})
 
 
 class SessionDB(MongoDB):
@@ -56,6 +62,11 @@ class PrivateCollectionsDB(MongoDB):
         new_values = {"$set": {"collection_name": field_to_replace}}
         # self.__db.update_one(myquery, new_values)
         self._MongoDB__db.update_one(myquery, new_values)
+
+    def delete_collection(self, id_to_delete: str, collection_name: str):
+        delete_filter = {"user_id": id_to_delete, "collection_name": collection_name}
+        result = self._MongoDB__db.delete_one(delete_filter)
+        print(result)
 
 
 sessionsTable = SessionDB()
