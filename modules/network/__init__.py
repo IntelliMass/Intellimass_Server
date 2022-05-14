@@ -9,12 +9,14 @@ class Network:
 
     DEFUALT_THRESHOLD = 0.5
     ABSTRACT_THRESHOLD = 0.5
-    TITLE_THRESHOLD = 0.8
+    TITLE_THRESHOLD = 0.9
 
     def __init__(self, articles_df: pd.DataFrame, feature: str):
         self.network = None
         feature = feature.lower().replace(' ', '').lower()
         self.articles_df = articles_df
+        if feature not in self.articles_df.columns:
+            raise ValueError('feature not in DataFrame')
 
         eval(f"self.connect_by_{feature}()")
 
@@ -32,7 +34,6 @@ class Network:
         thread_title.join()
         for i in range(len(abstract_similarities)):
             continue
-
 
     def connect_by_abstract(self, call_back_object=None):
         self.network = []
