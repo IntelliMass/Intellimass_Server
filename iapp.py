@@ -45,7 +45,7 @@ def query():
     try:
         (query,) = utils.get_post_data('query')
     except Exception as res:
-        return res
+        return eval(str(res))
     raw_articles = SemanticScholarAPI.get_articles(query)
     extended_articles = utils.article_extender(raw_articles, query)
     extended_articles = utils.cluster_articles(extended_articles)
@@ -69,8 +69,8 @@ def get_articles():
     try:
         (query_id, count, filters, clusters, num_of_clusters) = utils.get_query_params('id', 'count', 'filters',
                                                                                        'clusters', 'numOfClusters')
-    except Exception as ex:
-        return eval(str(ex))
+    except Exception as res:
+        return eval(str(res))
     sessions_table_object = sessionsTable.get(query_id)
     articles_df = utils.handle_articles_count(sessions_table_object, count)
     articles_df = utils.filter_articles_by_features(articles_df, filters, clusters)
@@ -83,8 +83,8 @@ def get_articles():
 def get_metadata():
     try:
         (query_id, count, filters, clusters, num_of_clusters) = utils.get_query_params('id', 'count', 'filters', 'clusters', 'numOfClusters')
-    except Response as res:
-        return res
+    except Exception as res:
+        return eval(str(res))
     sessions_table_object = sessionsTable.get(query_id)
     articles_df = utils.handle_articles_count(sessions_table_object, count)
     articles_df = utils.filter_articles_by_features(articles_df, filters, clusters)
@@ -97,8 +97,9 @@ def get_metadata():
 def get_network():
     try:
         (query_id, count, filters, feature, clusters, num_of_clusters) = utils.get_query_params('id', 'count', 'filters', 'feature', 'clusters', 'numOfClusters')
-    except Response as res:
-        return res
+    except Exception as res:
+        print(str(res))
+        return eval(str(res))
     sessions_table_object = sessionsTable.get(query_id)
     articles_df = utils.handle_articles_count(sessions_table_object, count)
     articles_df = utils.filter_articles_by_features(articles_df, filters, clusters)
@@ -108,6 +109,7 @@ def get_network():
         links_list = network.get_network()
     except ValueError as ve:
         return Response(response=str(ve), status=400, headers=utils.COMMON_HEADER_RESPONSE)
+    # articles_df.rename(columns={'paperId': 'id'}, inplace=True)
     articles_json = utils.articles_to_json(articles_df)
     return Response(response=json.dumps({"network": {"nodes": articles_json, "links": links_list}}), status=200, headers=utils.COMMON_HEADER_RESPONSE)
 
@@ -120,7 +122,10 @@ def get_one():
 
 @app.route('/clusters', methods=['GET'])
 def get_clusters():
-    (query_id, count, filters, clusters, num_of_clusters) = utils.get_query_params('id', 'count', 'filters', 'clusters', 'numOfClusters')
+    try:
+        (query_id, count, filters, clusters, num_of_clusters) = utils.get_query_params('id', 'count', 'filters', 'clusters', 'numOfClusters')
+    except Exception as res:
+        return eval(str(res))
     sessions_table_object = sessionsTable.get(query_id)
     articles_df = utils.handle_articles_count(sessions_table_object, count)
     articles_df = utils.filter_articles_by_features(articles_df, filters, clusters)

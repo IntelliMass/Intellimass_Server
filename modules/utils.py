@@ -87,9 +87,9 @@ def get_query_params(*argv):
         elif key == 'numOfClusters':
             extractedKey = int(extractedKey)
         elif extractedKey is None or extractedKey == '':
-            raise Exception(f"response='Bad Request - {key}', status=400, \
-                            headers={'Access-Control-Allow-Origin': '*'}")
+            raise Exception(f"Response(response='Bad Request - {key}', status=400, headers={COMMON_HEADER_RESPONSE})")
         data.append(extractedKey)
+    print(data)
     if len(data) == 1:
         return data[0]
     return tuple(data)
@@ -217,6 +217,7 @@ def get_clusters(articles_df: pd.DataFrame):
     clusters = articles_df['cluster'].value_counts().to_dict()
     res = [{"title": title, "rank": value} for title, value in clusters.items()]
     return res
+
 
 def collection_to_json(private_collection_object: pd.DataFrame):
     return private_collection_object.to_dict('collection_name')
