@@ -1,5 +1,7 @@
 import threading
 import time
+from collections import Counter
+
 import pandas as pd
 import itertools
 from modules.algorithms import BertTextSimilarity
@@ -15,13 +17,36 @@ class Network:
         self.network = None
         feature = feature.lower().replace(' ', '').lower()
         self.articles_df = articles_df
-        if feature not in self.articles_df.columns:
+        if feature not in [column.lower() for column in self.articles_df.columns]:
             raise ValueError('feature not in DataFrame')
-
+        self.count_connections_list = []
         eval(f"self.connect_by_{feature}()")
+        TypeError(f"self.connect_by_{feature}()")
+        try:
+            self.count_connections()
+        except Exception as ex:
+            print(str(ex))
 
     def get_network(self):
-        return self.network
+        return self.articles_df, self.network
+
+    def count_connections(self):
+        temp_connections = []
+        for node in self.network:
+            temp_connections.append(node['source'])
+            temp_connections.append(node['target'])
+
+        temp_connections = dict(Counter(temp_connections))
+        factor = 1.0 / max(temp_connections.values())
+        for k in temp_connections.keys():
+            temp_connections[k] = temp_connections[k] * factor
+        print(temp_connections)
+        basic_size = 300
+        connections_full_size_factor = 300
+        self.articles_df['size'] = [basic_size] * len(self.articles_df)
+        for node, value in temp_connections.items():
+            self.articles_df.loc[self.articles_df['title'] == node, 'size'] += connections_full_size_factor * value
+        print(self.articles_df.loc[self.articles_df['title'] == "Risk Mitigation for Dynamic State Estimation Against Cyber Attacks and Unknown Inputs", 'size'])
 
     def connect_by_default(self):
         abstract_similarities = []
@@ -37,7 +62,7 @@ class Network:
 
     def connect_by_abstract(self, call_back_object=None):
         self.network = []
-        bert = BertTextSimilarity(self.articles_df, 'abstarct')
+        bert = BertTextSimilarity(self.articles_df, 'abstract')
         start = time.time()
         similarities = bert.get_similarities()
         if call_back_object is not None:
@@ -49,13 +74,14 @@ class Network:
                 if ((call_back_object is not None) or (similarity > self.ABSTRACT_THRESHOLD)) and i != j:
                     self.network.append(
                         {
-                            "source": self.articles_df['paperId'][i],
-                            "target": self.articles_df['paperId'][j],
+                            "source": self.articles_df['title'][i],
+                            "target": self.articles_df['title'][j],
                             "value": float("{:.4f}".format(similarity))
                         }
                     )
         print(f"Abstract Network takes {time.time()-start} seconds")
         print(f"number of connections = {len(self.network)}")
+
 
     def connect_by_title(self, call_back_object=None):
         self.network = []
@@ -79,6 +105,27 @@ class Network:
         print(f"Title Network takes {time.time() - start} seconds")
         print(f"number of connections = {len(self.network)}")
 
+    def connect_by_frequentwords(self, call_back_object=None):
+        self.network = []
+        start = time.time()
+        for i, article1 in self.articles_df.iterrows():
+            for _, article2 in self.articles_df.iterrows():
+                if article1['paperId'] == article2['paperId']:
+                    continue
+                common_freqwords_in_both_articles = list(set(article1['frequentWords']).intersection(article2['frequentWords']))
+                common_freqwords_in_both_articles = [freqword for freqword in article1['frequentWords'] if
+                                               freqword in common_freqwords_in_both_articles]
+                if len(common_freqwords_in_both_articles) > 1:
+                    self.network.append(
+                        {
+                            "source": article1['title'],
+                            "target": article2['title'],
+                            "value": common_freqwords_in_both_articles
+                        }
+                    )
+        print(f"frequentWords Network takes {time.time() - start} seconds")
+        print(f"number of connections = {len(self.network)}")
+
     def connect_by_authors(self):
         self.network = []
         start = time.time()
@@ -99,5 +146,5 @@ class Network:
                             "value": common_authors_in_both_articles
                         }
                     )
-        print(f"Title Network takes {time.time() - start} seconds")
+        print(f"Authors Network takes {time.time() - start} seconds")
         print(f"number of connections = {len(self.network)}")

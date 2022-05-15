@@ -8,6 +8,8 @@ class BertTextSimilarity:
     model = SentenceTransformer('bert-base-nli-mean-tokens')
 
     def __init__(self, articles_df: pd.DataFrame, feature):
+        if feature not in articles_df.columns:
+            raise ValueError(f"{feature} not in DataFrame")
         if type(articles_df[feature][0]) != str:
             raise ValueError(f"articles_df[{feature}] is not str type.")
         self.text_series = articles_df[feature]

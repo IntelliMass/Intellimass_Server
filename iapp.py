@@ -106,7 +106,7 @@ def get_network():
     articles_df = utils.cluster_articles(articles_df, num_of_clusters)
     try:
         network = Network(articles_df, feature)
-        links_list = network.get_network()
+        articles_df, links_list = network.get_network()
     except ValueError as ve:
         return Response(response=str(ve), status=400, headers=utils.COMMON_HEADER_RESPONSE)
     # articles_df.rename(columns={'paperId': 'id'}, inplace=True)
