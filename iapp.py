@@ -48,7 +48,8 @@ def query():
         return eval(str(res))
     raw_articles = SemanticScholarAPI.get_articles(query)
     extended_articles = utils.article_extender(raw_articles, query)
-    extended_articles = utils.cluster_articles(extended_articles)
+    sessions_table_object = objects.SessionObject(query)
+    extended_articles = utils.cluster_articles(extended_articles, sessions_table_object)
     object = objects.SessionObject(query, extended_articles, config.Defaults.numOfArticles_firstSearch)
     sessionsTable.insert(object)
 
@@ -74,7 +75,7 @@ def get_articles():
     sessions_table_object = sessionsTable.get(query_id)
     articles_df = utils.handle_articles_count(sessions_table_object, count)
     articles_df = utils.filter_articles_by_features(articles_df, filters, clusters)
-    articles_df = utils.cluster_articles(articles_df, num_of_clusters)
+    articles_df = utils.cluster_articles(articles_df, sessions_table_object, num_of_clusters)
     articles_json = utils.articles_to_json(articles_df)
     return Response(response=json.dumps({"articles": articles_json}), status=200, headers=utils.COMMON_HEADER_RESPONSE)
 
@@ -88,7 +89,7 @@ def get_metadata():
     sessions_table_object = sessionsTable.get(query_id)
     articles_df = utils.handle_articles_count(sessions_table_object, count)
     articles_df = utils.filter_articles_by_features(articles_df, filters, clusters)
-    articles_df = utils.cluster_articles(articles_df, num_of_clusters)
+    articles_df = utils.cluster_articles(articles_df, sessions_table_object, num_of_clusters)
     metadata = utils.get_metadata(articles_df)
     return {"metadata": metadata}
 
@@ -103,7 +104,7 @@ def get_network():
     sessions_table_object = sessionsTable.get(query_id)
     articles_df = utils.handle_articles_count(sessions_table_object, count)
     articles_df = utils.filter_articles_by_features(articles_df, filters, clusters)
-    articles_df = utils.cluster_articles(articles_df, num_of_clusters)
+    articles_df = utils.cluster_articles(articles_df, sessions_table_object, num_of_clusters)
     try:
         network = Network(articles_df, feature)
         articles_df, links_list = network.get_network()
@@ -129,7 +130,7 @@ def get_clusters():
     sessions_table_object = sessionsTable.get(query_id)
     articles_df = utils.handle_articles_count(sessions_table_object, count)
     articles_df = utils.filter_articles_by_features(articles_df, filters, clusters)
-    articles_df = utils.cluster_articles(articles_df, num_of_clusters)
+    articles_df = utils.cluster_articles(articles_df, sessions_table_object, num_of_clusters)
     clusters = utils.get_clusters(articles_df)
     return {"clusters": clusters}
 
