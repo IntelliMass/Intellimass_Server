@@ -15,13 +15,14 @@ TOPICS_NUM = 1
 
 
 class LdaModeling:
-    def __init__(self, df_articles: pd.DataFrame, num_of_clusters=4):
+    def __init__(self, df_articles: pd.DataFrame, search_keys: list, num_of_clusters=4):
         self._lda_model = None
         self.__papers = df_articles
         self._dict_of_topics = {}
         self._topics_list = []
         self._num_of_clusters = num_of_clusters
         self._current_cluster = None
+        self._search_keyword = search_keys
 
         self.__stopwords_string()
         self.__remove_punctuation_and_convert_to_lowercase()
@@ -119,10 +120,10 @@ class LdaModeling:
         temp_topic_list = sorted(self._dict_of_topics, key=self._dict_of_topics.get,
                                  reverse=True)[:self._num_of_clusters]
         for index in range(self._num_of_clusters):
-            if temp_topic_list[index] not in self._topics_list:
+            if temp_topic_list[index] not in self._topics_list and temp_topic_list[index] not in self._search_keyword:
                 self._topics_list.append(temp_topic_list[index])
                 self.__papers['cluster'] = self.__papers['cluster'].replace(self._current_cluster,
-                                                                                  temp_topic_list[index])
+                                                                            temp_topic_list[index])
                 break
 
     @property

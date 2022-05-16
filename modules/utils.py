@@ -113,11 +113,12 @@ def article_extender(articles_df: pd.DataFrame, query: str):
     return articles_df
 
 
-def cluster_articles(articles_df: pd.DataFrame, num_of_clusters=4):
+def cluster_articles(articles_df: pd.DataFrame, session_obj: SessionObject, num_of_clusters=4):
     """
     Use K-Means clustering algorithm & NLP's LDA algorithm for give for each cluster unique name
     """
-    lda_modeling = algorithms.kmeans_lda.LdaModeling(articles_df, num_of_clusters)
+    search_keys_list = session_obj.query.split()
+    lda_modeling = algorithms.kmeans_lda.LdaModeling(articles_df, search_keys_list, num_of_clusters)
     articles_df = lda_modeling.papers
     return articles_df
 
