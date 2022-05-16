@@ -36,13 +36,21 @@ class MongoDB:
 
     def pop_paper(self, id_to_pop: str, collection_name: str, object_to_pop: str):
         update_filter = {'user_id': id_to_pop, "collection_name": collection_name}
-        set_params = {'articles_list': object_to_pop}      
+        # set_params = {'articles_list': object_to_pop}
+        set_params = {'articles_list': {'paperId': object_to_pop}}
         self.__db.update_one(update_filter, {'$pull': set_params})
 
 
 class SessionDB(MongoDB):
     def __init__(self):
         super().__init__("sessions")
+
+    def get_article_paperid(self, query_id: str, article_id: str):
+        get_filter = {'id': query_id, 'articles': {'$elemMatch': {'paperId': article_id}}}
+        found_obj = self._MongoDB__db.find_one(get_filter)
+        print(f'found_obj: {found_obj}')
+        del found_obj['_id']
+        return found_obj
 
 
 class PrivateCollectionsDB(MongoDB):
