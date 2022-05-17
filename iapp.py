@@ -134,24 +134,6 @@ def get_clusters():
     return {"clusters": clusters}
 
 
-def get_all_user_collections(user_id: str):
-    private_collection_table_object = privateCollectionsTable.get(user_id, id_var="user_id")
-    if isinstance(private_collection_table_object, list):
-        for i_article in private_collection_table_object:
-            if "_id" in i_article:
-                del i_article['_id']
-            if "user_id" in i_article:
-                del i_article['user_id']
-    else:
-        if "_id" in private_collection_table_object:
-            del private_collection_table_object['_id']
-        if "user_id" in private_collection_table_object:
-            del private_collection_table_object['user_id']
-        private_collection_table_object = [private_collection_table_object]
-    # array_of_collections = [private_collection_table_object]
-    return {"collection": private_collection_table_object}
-
-
 # works and integrated
 @app.route('/collections', methods=['GET'])
 def get_collections():
@@ -163,18 +145,7 @@ def get_collections():
     """
     user_id = utils.get_query_params('user_id')
     print(f'get_collection -> user_id: {user_id}')
-    # private_collection_table_object = privateCollectionsTable.get(user_id, id_var="user_id")
-    # if len(private_collection_table_object) > 1:
-    #     for i_article in private_collection_table_object:
-    #         del i_article['_id']
-            # del i_article['user_id']
-    # else:
-    #     del private_collection_table_object['_id']
-    #     del private_collection_table_object['user_id']
-    #     private_collection_table_object = [private_collection_table_object]
-    # array_of_collections = [private_collection_table_object]
-    # return {"collection": private_collection_table_object}
-    return get_all_user_collections(user_id)
+    return utils.get_all_user_collections(user_id)
 
 
 # works and integrated
@@ -202,7 +173,7 @@ def create_collection():
         collection_object = objects.PrivateCollectionObject(user_id, collection_name)
         print(f'collection_object: {collection_object.user_id}, {collection_object.collection_name}, {collection_object.articles_list}')
         privateCollectionsTable.insert(collection_object)
-        return get_all_user_collections(user_id)
+        return utils.get_all_user_collections(user_id)
         # return Response(response=json.dumps({'user_id': collection_object.user_id, 'status': 200}), status=200,
         #                 headers=utils.COMMON_HEADER_RESPONSE)
 
@@ -224,7 +195,7 @@ def insert_article():
     print(f'articles_obj: {articles_obj}')
     privateCollectionsTable.update_paper(user_id, collection_name, articles_obj['articles'][0])
     # return Response(response=json.dumps({'user_id': user_id}), status=200, headers=utils.COMMON_HEADER_RESPONSE)
-    return get_all_user_collections(user_id)
+    return utils.get_all_user_collections(user_id)
 
 
 # works and integrated
@@ -242,7 +213,7 @@ def pop_article():
     print(f'collection_name: {collection_name}, article_id: {article_id}')
     privateCollectionsTable.pop_paper(user_id, collection_name, article_id)
     # return Response(response=json.dumps({'user_id': user_id}), status=200, headers=utils.COMMON_HEADER_RESPONSE)
-    return get_all_user_collections(user_id)
+    return utils.get_all_user_collections(user_id)
 
 
 # works and integrated
@@ -260,7 +231,7 @@ def collection_delete():
     print(f'collection_name: {collection_name}')
     privateCollectionsTable.delete_collection(user_id, collection_name)
     # return Response(response=json.dumps({'user_id': user_id}), status=200, headers=utils.COMMON_HEADER_RESPONSE)
-    return get_all_user_collections(user_id)
+    return utils.get_all_user_collections(user_id)
 
 
 # WORKS, and integrated
@@ -281,7 +252,7 @@ def collection_rename():
     # current_collection, new_collection = utils.get_post_data('collection_name', 'new_collection')
     privateCollectionsTable.replace(user_id, current_collection, new_collection)
     # return Response(response=json.dumps({'user_id': user_id}), status=200, headers=utils.COMMON_HEADER_RESPONSE)
-    return get_all_user_collections(user_id)
+    return utils.get_all_user_collections(user_id)
 
 
 if __name__ == '__main__':

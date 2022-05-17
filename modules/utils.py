@@ -227,3 +227,20 @@ def collection_to_json(private_collection_object: pd.DataFrame):
 def extract_articles_from_session_db(sessions_table_object: SessionObject, article_list: list):
     articles = sessions_table_object.articles
     return articles[articles['id'].isin(article_list)]
+
+def get_all_user_collections(user_id: str):
+    private_collection_table_object = privateCollectionsTable.get(user_id, id_var="user_id")
+    if isinstance(private_collection_table_object, list):
+        for i_article in private_collection_table_object:
+            if "_id" in i_article:
+                del i_article['_id']
+            if "user_id" in i_article:
+                del i_article['user_id']
+    else:
+        if "_id" in private_collection_table_object:
+            del private_collection_table_object['_id']
+        if "user_id" in private_collection_table_object:
+            del private_collection_table_object['user_id']
+        private_collection_table_object = [private_collection_table_object]
+    # array_of_collections = [private_collection_table_object]
+    return {"collection": private_collection_table_object}
