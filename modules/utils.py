@@ -146,8 +146,6 @@ def filter_articles_by_features(articles_df: pd.DataFrame, filters: list, cluste
     if (filters is None or filters == []) and (clusters is None or clusters == []):
         return articles_df
 
-
-
     print(f"filters: {filters}\nclusters: {clusters}")
 
     def common_filter(row, filter_feature, filter):
@@ -161,8 +159,6 @@ def filter_articles_by_features(articles_df: pd.DataFrame, filters: list, cluste
             articles_df = articles_df[articles_df.apply(filter_authors, axis=1, args=(filter,))]
         else:
             articles_df = articles_df[articles_df.apply(common_filter, axis=1, args=(filter_feature, filter))]
-
-
 
     return articles_df
 
@@ -228,6 +224,7 @@ def extract_articles_from_session_db(sessions_table_object: SessionObject, artic
     articles = sessions_table_object.articles
     return articles[articles['id'].isin(article_list)]
 
+
 def get_all_user_collections(user_id: str):
     private_collection_table_object = privateCollectionsTable.get(user_id, id_var="user_id")
     if isinstance(private_collection_table_object, list):
@@ -242,5 +239,4 @@ def get_all_user_collections(user_id: str):
         if "user_id" in private_collection_table_object:
             del private_collection_table_object['user_id']
         private_collection_table_object = [private_collection_table_object]
-    # array_of_collections = [private_collection_table_object]
     return {"collection": private_collection_table_object}
