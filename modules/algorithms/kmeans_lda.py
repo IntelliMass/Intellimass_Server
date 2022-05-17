@@ -52,7 +52,6 @@ class LdaModeling:
 
     def __stopwords_string(self):
         print("__stopwords_string")
-        nltk.download('stopwords')
         self.stop_words = stopwords.words('english')
         self.stop_words.extend(['from', 'subject', 're', 'edu', 'use'])
 
