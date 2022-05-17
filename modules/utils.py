@@ -85,7 +85,7 @@ def get_query_params(*argv):
         elif key == 'clusters':
             extractedKey = clusters_parser(extractedKey)
         elif key == 'numOfClusters':
-            extractedKey = int(extractedKey)
+            extractedKey = int(extractedKey) if extractedKey is not None else 4
         elif extractedKey is None or extractedKey == '':
             raise Exception(f"Response(response='Bad Request - {key}', status=400, headers={COMMON_HEADER_RESPONSE})")
         data.append(extractedKey)
@@ -113,11 +113,11 @@ def article_extender(articles_df: pd.DataFrame, query: str):
     return articles_df
 
 
-def cluster_articles(articles_df: pd.DataFrame, session_obj: SessionObject, num_of_clusters=4):
+def cluster_articles(articles_df: pd.DataFrame, session_obj: dict, num_of_clusters=4):
     """
     Use K-Means clustering algorithm & NLP's LDA algorithm for give for each cluster unique name
     """
-    search_keys_list = session_obj.query.split()
+    search_keys_list = session_obj['query'].split()
     lda_modeling = algorithms.kmeans_lda.LdaModeling(articles_df, search_keys_list, num_of_clusters)
     articles_df = lda_modeling.papers
     return articles_df

@@ -4,7 +4,7 @@ import datetime
 
 
 class SessionObject(object):
-    def __init__(self, query: str, articles_df: pd.DataFrame, offset: int, id=None, breadcrumbs=None):
+    def __init__(self, query: str, articles_df: pd.DataFrame = None, offset: int = None, id=None, breadcrumbs=None):
         self.query = query
         self.articles = articles_df.to_dict('records') if articles_df is not None else None
         self.id = id if id is not None else str(uuid.uuid4())

@@ -48,7 +48,7 @@ def query():
         return eval(str(res))
     raw_articles = SemanticScholarAPI.get_articles(query)
     extended_articles = utils.article_extender(raw_articles, query)
-    sessions_table_object = objects.SessionObject(query)
+    sessions_table_object = objects.SessionObject(query).__dict__
     extended_articles = utils.cluster_articles(extended_articles, sessions_table_object)
     object = objects.SessionObject(query, extended_articles, config.Defaults.numOfArticles_firstSearch)
     sessionsTable.insert(object)
@@ -99,7 +99,6 @@ def get_network():
     try:
         (query_id, count, filters, feature, clusters, num_of_clusters) = utils.get_query_params('id', 'count', 'filters', 'feature', 'clusters', 'numOfClusters')
     except Exception as res:
-        print(str(res))
         return eval(str(res))
     sessions_table_object = sessionsTable.get(query_id)
     articles_df = utils.handle_articles_count(sessions_table_object, count)
@@ -135,16 +134,8 @@ def get_clusters():
     return {"clusters": clusters}
 
 
-##############################################################################################
-# UPDATE UPDATE UPDATE UPDATE UPDATE UPDATE UPDATE UPDATE UPDATE UPDATE UPDATE UPDATE UPDATE #
-##############################################################################################
 def get_all_user_collections(user_id: str):
     private_collection_table_object = privateCollectionsTable.get(user_id, id_var="user_id")
-    print('############################################')
-    print('private_collection_table_object')
-    print(private_collection_table_object)
-    print('############################################')
-    # if len(private_collection_table_object) > 1:
     if isinstance(private_collection_table_object, list):
         for i_article in private_collection_table_object:
             if "_id" in i_article:
