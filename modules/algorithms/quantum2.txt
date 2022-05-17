@@ -1,7 +1,0 @@
-The Church-Turing thesis says that a digital computer is a
-universal computational device; that is, it is able to simulate any physically realizable computational device. It has generally been believed that
-this simulation can be made efficient so that it entails at most a polynomial increase in computation time. This may not be true if quantum
-mechanics is taken into consideration. A quantum computer is a hypothetical machine based on quantum mechanics. We explain quantum
-computing, and give an algorithm for prime factorization on a quantum computer that runs asymptotically much faster than the best known algorithm on a digital computer.
-It is not clear whether it will ever be possible to build large-scale quantum computers. One of the main difficulties is in manipulating coherent quantum states without introducing errors or losing coherence.
-We discuss quantum error-correcting codes and fault-tolerant quantum computing, which can guarantee highly reliable quantum computation, given only moderately reliable quantum computing hardware.
