@@ -100,6 +100,7 @@ class LdaModeling:
             self._current_cluster = num
             self.__lda_model_training(corpus, id2word)
         self.__papers = self.__papers.drop(labels=['cleaned_abstract', 'clean_abstract_str', 'x0', 'x1'], axis=1)
+        print(self.__papers['cluster'])
         self.__papers['cluster'] = self.__papers['cluster'].apply(lambda cluster:
                                                                   cluster.capitalize() if cluster[
                                                                       0].islower() else cluster)
@@ -124,16 +125,16 @@ class LdaModeling:
                                  reverse=True)[:self._num_of_clusters]
         for index in range(self._num_of_clusters):
             if temp_topic_list[index] not in self._topics_list and temp_topic_list[index] not in self._search_keyword \
-                    and temp_topic_list[index] not in self._search_keyword[:-1]:
+                    and temp_topic_list[index] + 's' not in temp_topic_list and not temp_topic_list[index].isnumeric():
                 valid_topic = temp_topic_list[index]
                 for freq_words in set(self.__papers['frequentWords'].explode()):
                     if valid_topic == freq_words.lower():
                         valid_topic = freq_words
-                        break
-                self._topics_list.append(valid_topic)
-                self.__papers['cluster'] = self.__papers['cluster'].replace(self._current_cluster,
+                        self._topics_list.append(valid_topic)
+                        self.__papers['cluster'] = self.__papers['cluster'].replace(self._current_cluster,
                                                                             valid_topic)
-                break
+                        break
+
 
     @property
     def topics_list(self):

@@ -51,7 +51,7 @@ def query():
     sessions_table_object = objects.SessionObject(query).__dict__
     extended_articles = utils.cluster_articles(extended_articles, sessions_table_object)
     object = objects.SessionObject(query, extended_articles, config.Defaults.numOfArticles_firstSearch)
-    print(object)
+    print(object.breadcrumbs)
     sessionsTable.insert(object)
 
     ################################################
@@ -78,7 +78,7 @@ def get_articles():
     print(f"len articles: {len(articles_df)}")
     articles_df = utils.filter_articles_by_features(articles_df, filters, clusters)
     articles_df = utils.cluster_articles(articles_df, sessions_table_object, num_of_clusters)
-    utils.update_breadcrumbs(sessions_table_object, query_id, count, filters, clusters)
+    utils.update_breadcrumbs(sessions_table_object, count, filters, clusters)
     articles_json = utils.articles_to_json(articles_df)
     print(f"len articles: {len(articles_json)}")
     return Response(response=json.dumps({"articles": articles_json}), status=200, headers=utils.COMMON_HEADER_RESPONSE)
@@ -264,6 +264,11 @@ def get_breadcrumbs():
     """
 
     """
+    query_id = utils.get_query_params('id')
+    breadcrumbs = utils.get_breadcrumbs(query_id)
+    return Response(response=json.dumps({"breadCrumbList": breadcrumbs}), status=200, headers=utils.COMMON_HEADER_RESPONSE)
+
+
     query_id = utils.get_query_params('id')
 
     import datetime

@@ -118,6 +118,9 @@ def cluster_articles(articles_df: pd.DataFrame, session_obj: dict, num_of_cluste
     """
     Use K-Means clustering algorithm & NLP's LDA algorithm for give for each cluster unique name
     """
+    print('cluster' in articles_df.columns)
+    if 'cluster' in articles_df.columns:
+        print(len(set(articles_df['cluster'])) == num_of_clusters)
     if 'cluster' in articles_df.columns and len(set(articles_df['cluster'])) == num_of_clusters:
         return articles_df
     search_keys_list = session_obj['query'].split()
@@ -132,13 +135,13 @@ def handle_articles_count(session_object: dict, count: int):
     if count bigger than articles exist app will extend the articles DataFrame.
     """
     count = int(count)
-    session_object["articles"] = pd.DataFrame(session_object["articles"])
-    if count > len(session_object["articles"]):
-        new_articles_df = SemanticScholarAPI.get_articles(session_object["query"], offset=session_object["offset"])
-        session_object["articles"].append(new_articles_df, ignore_index=True)
-        session_object["articles"] = article_extender(session_object["articles"], session_object["query"])
+    articles_df = pd.DataFrame(session_object["articles"])
+    if count > len(articles_df):
+        new_articles_df = SemanticScholarAPI.get_articles(articles_df, offset=session_object["offset"])
+        articles_df.append(new_articles_df, ignore_index=True)
+        articles_df = article_extender(articles_df, session_object["query"])
         sessionsTable.update(session_object["id"], session_object)
-    return session_object["articles"][:count]
+    return articles_df[:count]
 
 
 def filter_articles_by_features(articles_df: pd.DataFrame, filters: list, clusters: list):
@@ -167,7 +170,7 @@ def filter_articles_by_features(articles_df: pd.DataFrame, filters: list, cluste
     print(f"len df {len(articles_df)}")
     print(f"Counter {counter}")
     pd.set_option("display.max_rows", None, "display.max_columns", None)
-    print(articles_df['cluster'])
+    # print(articles_df['cluster'])
 
     for filter_feature, filter in filters:
         if filter_feature.lower() == 'authors':
@@ -264,6 +267,21 @@ def get_all_user_collections(user_id: str):
 
 def generate_breadcrumb(breadcrumbs: list, query_list: list, clusters: list, meta_data_list: list, count: int):
 
+    print(f"query: {query_list}, type: {type(query_list)}")
+    if isinstance(query_list, str):
+        query_list = [query_list]
+
+    if clusters is None:
+        clusters = []
+
+    if meta_data_list is None:
+        meta_data_list = []
+
+    print(clusters)
+    print(meta_data_list)
+
+    count = int(count)
+
     if breadcrumbs is None or breadcrumbs == []:
         breadcrumbs = [{
             "index": 0,
@@ -275,10 +293,13 @@ def generate_breadcrumb(breadcrumbs: list, query_list: list, clusters: list, met
         }]
         return breadcrumbs
 
+    # print(breadcrumbs)
+    # print(breadcrumbs[-1]["clusters"], type(breadcrumbs[-1]["clusters"]))
+    # print(clusters, type(clusters))
     new_breadcrumb = {
-        "queryList": set(breadcrumbs[-1]["queryList"].extend(query_list)),
-        "clusters": set(breadcrumbs[-1]["clusters"].extend(clusters)),
-        "metadataList": set(breadcrumbs[-1]["metadataList"].extend(meta_data_list)),
+        "queryList": breadcrumbs[-1]["queryList"],
+        "clusters": clusters,
+        "metadataList": meta_data_list,
         "count": count
     }
 
@@ -289,17 +310,12 @@ def generate_breadcrumb(breadcrumbs: list, query_list: list, clusters: list, met
 
     return breadcrumbs
 
-    breadMock = {
-        "index": 0,
-        "time": datetime.datetime.now().strftime("%d/%m/%Y | %H:%M:%S"),
-        "queryList": ["cyber", "IOT"],
-        "clusters": ["Systems", "Software", "Network"],
-        "metadataList": [{"type": "year", "title": "2020"}, {"type": "authors", "title": "Remy Martiti"}],
-        "count": 100
-    }
+
+def update_breadcrumbs(sessions_table_object: dict, count: int, filters: list, clusters: list):
+    sessions_table_object['breadcrumbs'] = generate_breadcrumb(sessions_table_object['breadcrumbs'], sessions_table_object['query'], filters, clusters, count)
+    sessionsTable.update(sessions_table_object["id"], sessions_table_object)
 
 
-def update_breadcrumbs(sessions_table_object: dict, query_id: list, count: int, filters: list, clusters: list):
-    return
-    sessions_table_object['breadcrumbs'] = generate_breadcrumb(sessions_table_object['breadcrumbs'], query_id, filters, clusters, count)
-    sessionsTable.update(session_object["id"], session_object)
+def get_breadcrumbs(query_id: str):
+    sessions_table_object = sessionsTable.get(query_id)
+    return sessions_table_object['breadcrumbs']

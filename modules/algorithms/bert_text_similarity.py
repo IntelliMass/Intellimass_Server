@@ -1,11 +1,12 @@
-from sentence_transformers import SentenceTransformer
+# from sentence_transformers import SentenceTransformer
 import pandas as pd
 from sklearn.metrics.pairwise import cosine_similarity
 import time
 
 
 class BertTextSimilarity:
-    model = SentenceTransformer('bert-base-nli-mean-tokens')
+    # model = SentenceTransformer('bert-base-nli-mean-tokens')
+    model = None
 
     def __init__(self, articles_df: pd.DataFrame, feature):
         if feature not in articles_df.columns:
