@@ -41,8 +41,8 @@ class Network:
         for k in temp_connections.keys():
             temp_connections[k] = temp_connections[k] * factor
         print(temp_connections)
-        basic_size = 300
-        connections_full_size_factor = 300
+        basic_size = 200
+        connections_full_size_factor = 200
         self.articles_df['size'] = [basic_size] * len(self.articles_df)
         for node, value in temp_connections.items():
             self.articles_df.loc[self.articles_df['title'] == node, 'size'] += connections_full_size_factor * value

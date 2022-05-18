@@ -1,3 +1,4 @@
+import datetime
 from collections import Counter
 
 from flask import request, Response
@@ -50,9 +51,9 @@ def get_post_data(*argv):
 
 def filters_parser(filters: str):
     """
-    Extract filters from query separated by %%
+    Extract filters from query separated by %$
     """
-    filters = filters.split('%%')
+    filters = filters.split('%$')
     filters_array = []
     for filter in filters:
         filter = filter.split('=')
@@ -62,11 +63,11 @@ def filters_parser(filters: str):
 
 def clusters_parser(clusters: str):
     """
-    Extract filters from query separated by %%
+    Extract filters from query separated by %$
     """
     if clusters is None or clusters == "":
         return None
-    return clusters.split('%%')
+    return clusters.split('%$')
 
 
 def get_query_params(*argv):
@@ -117,6 +118,8 @@ def cluster_articles(articles_df: pd.DataFrame, session_obj: dict, num_of_cluste
     """
     Use K-Means clustering algorithm & NLP's LDA algorithm for give for each cluster unique name
     """
+    if 'cluster' in articles_df.columns and len(set(articles_df['cluster'])) == num_of_clusters:
+        return articles_df
     search_keys_list = session_obj['query'].split()
     lda_modeling = algorithms.kmeans_lda.LdaModeling(articles_df, search_keys_list, num_of_clusters)
     articles_df = lda_modeling.papers
@@ -131,7 +134,7 @@ def handle_articles_count(session_object: dict, count: int):
     count = int(count)
     session_object["articles"] = pd.DataFrame(session_object["articles"])
     if count > len(session_object["articles"]):
-        new_articles_df = SemanticScholarAPI.get_articles(session_object["query"], offset=session_object.offset)
+        new_articles_df = SemanticScholarAPI.get_articles(session_object["query"], offset=session_object["offset"])
         session_object["articles"].append(new_articles_df, ignore_index=True)
         session_object["articles"] = article_extender(session_object["articles"], session_object["query"])
         sessionsTable.update(session_object["id"], session_object)
@@ -147,6 +150,8 @@ def filter_articles_by_features(articles_df: pd.DataFrame, filters: list, cluste
         return articles_df
 
     print(f"filters: {filters}\nclusters: {clusters}")
+    clusters = ('cluster', clusters)
+    filters = filters.append(clusters) if filters is not None else [clusters]
 
     def common_filter(row, filter_feature, filter):
         return filter in row[filter_feature]
@@ -154,9 +159,22 @@ def filter_articles_by_features(articles_df: pd.DataFrame, filters: list, cluste
     def filter_authors(row, author):
         return author in [author['name'] for author in row['authors']]
 
+    print(clusters)
+    counter = 0
+    for _, article in articles_df.iterrows():
+        if article['cluster'] in clusters[1]:
+            counter += 1
+    print(f"len df {len(articles_df)}")
+    print(f"Counter {counter}")
+    pd.set_option("display.max_rows", None, "display.max_columns", None)
+    print(articles_df['cluster'])
+
     for filter_feature, filter in filters:
         if filter_feature.lower() == 'authors':
             articles_df = articles_df[articles_df.apply(filter_authors, axis=1, args=(filter,))]
+        if filter_feature == 'cluster':
+            print(filter)
+            articles_df = articles_df[articles_df['cluster'].isin(filter)]
         else:
             articles_df = articles_df[articles_df.apply(common_filter, axis=1, args=(filter_feature, filter))]
 
@@ -210,8 +228,10 @@ def get_metadata(articles_df: pd.DataFrame):
 
 
 def get_clusters(articles_df: pd.DataFrame):
-    # clusters = list(set((articles_df['cluster'])))
     clusters = articles_df['cluster'].value_counts().to_dict()
+    pd.set_option("display.max_rows", None, "display.max_columns", None)
+    print(articles_df['cluster'])
+    print(clusters)
     res = [{"title": title, "rank": value} for title, value in clusters.items()]
     return res
 
@@ -240,3 +260,46 @@ def get_all_user_collections(user_id: str):
             del private_collection_table_object['user_id']
         private_collection_table_object = [private_collection_table_object]
     return {"collection": private_collection_table_object}
+
+
+def generate_breadcrumb(breadcrumbs: list, query_list: list, clusters: list, meta_data_list: list, count: int):
+
+    if breadcrumbs is None or breadcrumbs == []:
+        breadcrumbs = [{
+            "index": 0,
+            "time": datetime.datetime.now().strftime("%d/%m/%Y | %H:%M:%S"),
+            "queryList": query_list,
+            "clusters": clusters,
+            "metadataList": meta_data_list,
+            "count": count
+        }]
+        return breadcrumbs
+
+    new_breadcrumb = {
+        "queryList": set(breadcrumbs[-1]["queryList"].extend(query_list)),
+        "clusters": set(breadcrumbs[-1]["clusters"].extend(clusters)),
+        "metadataList": set(breadcrumbs[-1]["metadataList"].extend(meta_data_list)),
+        "count": count
+    }
+
+    if new_breadcrumb == breadcrumbs[-1]:
+        new_breadcrumb['index'] = breadcrumbs[-1]['index']
+        new_breadcrumb['time'] = datetime.datetime.now().strftime("%d/%m/%Y | %H:%M:%S")
+        breadcrumbs.append(breadcrumbs)
+
+    return breadcrumbs
+
+    breadMock = {
+        "index": 0,
+        "time": datetime.datetime.now().strftime("%d/%m/%Y | %H:%M:%S"),
+        "queryList": ["cyber", "IOT"],
+        "clusters": ["Systems", "Software", "Network"],
+        "metadataList": [{"type": "year", "title": "2020"}, {"type": "authors", "title": "Remy Martiti"}],
+        "count": 100
+    }
+
+
+def update_breadcrumbs(sessions_table_object: dict, query_id: list, count: int, filters: list, clusters: list):
+    return
+    sessions_table_object['breadcrumbs'] = generate_breadcrumb(sessions_table_object['breadcrumbs'], query_id, filters, clusters, count)
+    sessionsTable.update(session_object["id"], session_object)

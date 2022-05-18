@@ -51,6 +51,7 @@ def query():
     sessions_table_object = objects.SessionObject(query).__dict__
     extended_articles = utils.cluster_articles(extended_articles, sessions_table_object)
     object = objects.SessionObject(query, extended_articles, config.Defaults.numOfArticles_firstSearch)
+    print(object)
     sessionsTable.insert(object)
 
     ################################################
@@ -74,9 +75,12 @@ def get_articles():
         return str(res)
     sessions_table_object = sessionsTable.get(query_id)
     articles_df = utils.handle_articles_count(sessions_table_object, count)
+    print(f"len articles: {len(articles_df)}")
     articles_df = utils.filter_articles_by_features(articles_df, filters, clusters)
     articles_df = utils.cluster_articles(articles_df, sessions_table_object, num_of_clusters)
+    utils.update_breadcrumbs(sessions_table_object, query_id, count, filters, clusters)
     articles_json = utils.articles_to_json(articles_df)
+    print(f"len articles: {len(articles_json)}")
     return Response(response=json.dumps({"articles": articles_json}), status=200, headers=utils.COMMON_HEADER_RESPONSE)
 
 
@@ -255,14 +259,60 @@ def collection_rename():
     return utils.get_all_user_collections(user_id)
 
 
+@app.route('/breadcrumbs', methods=['GET'])
+def get_breadcrumbs():
+    """
+
+    """
+    query_id = utils.get_query_params('id')
+
+    import datetime
+
+    timest = datetime.datetime.now().strftime("%d/%m/%Y | %H:%M:%S")
+    mock_breadcrumbs = [
+        {
+            "index": 0,
+            "time": timest,
+            "queryList": ["cyber", "IOT"],
+            "clusters": ["Systems", "Software", "Network"],
+            "metadataList": [{"type": "year", "title": "2020"} , {"type": "authors", "title": "Remy Martiti"}],
+            "count": 100
+        },
+        {
+            "index": 1,
+            "time": timest,
+            "queryList": ["cyber"],
+            "clusters": ["Systems", "Software", "Network"],
+            "metadataList": [{"type": "year", "title": "2020"} , {"type": "authors", "title": "Remy Martiti"}],
+            "count": 100
+        },
+        {
+            "index": 2,
+            "time": timest,
+            "queryList": ["cyber", "IOT"],
+            "clusters": ["Systems", "Network"],
+            "metadataList": [{"type": "year", "title": "2020"} , {"type": "authors", "title": "Remy Martiti"}],
+            "count": 100
+        },
+        {
+            "index": 3,
+            "time": timest,
+            "queryList": ["cyber", "IOT"],
+            "clusters": ["Systems", "Software", "Network"],
+            "metadataList": [{"type": "year", "title": "2020"} , {"type": "authors", "title": "Remy Martiti"}],
+            "count": 100
+        }
+    ]
+    return {"breadCrumbList": mock_breadcrumbs}
+
 if __name__ == '__main__':
 
     ##################################################################
     # REMOVE REMOVE REMOVE REMOVE REMOVE REMOVE REMOVE REMOVE REMOVE #
-    from waitress import serve
-    if len(sys.argv) > 1 and sys.argv[1].lower() == 'prod':
-        serve(app, host="0.0.0.0", port=int(os.environ.get("PORT", utils.PORT)))
+    # from waitress import serve
+    # if len(sys.argv) > 1 and sys.argv[1].lower() == 'prod':
+    #     serve(app, host="0.0.0.0", port=int(os.environ.get("PORT", utils.PORT)))
     # REMOVE REMOVE REMOVE REMOVE REMOVE REMOVE REMOVE REMOVE REMOVE #
     ##################################################################
-    else:
-        app.run(host='0.0.0.0', debug=True, port=int(os.environ.get("PORT", utils.PORT)))
+    # else:
+    app.run(host='0.0.0.0', debug=True, port=int(os.environ.get("PORT", utils.PORT)))

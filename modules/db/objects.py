@@ -9,8 +9,7 @@ class SessionObject(object):
         self.articles = articles_df.to_dict('records') if articles_df is not None else None
         self.id = id if id is not None else str(uuid.uuid4())
         self.offset = offset
-        if not breadcrumbs:
-            self.breadcrums = [{"query": query,  "": datetime.datetime.now().strftime("%m/%d/%Y, %H:%M:%S")}]
+        self.breadcrumbs = breadcrumbs if breadcrumbs else []
 
 
 class PrivateCollectionObject(object):
