@@ -16,13 +16,18 @@ class MongoDB:
 
     def get(self, id_to_get: str, id_var="id"):
         objects = list(self.__db.find({id_var: id_to_get}))
+        for object in objects:
+            del object['_id']
         if len(objects) == 1:
             return objects[0]
         return objects
 
     def update(self, id_to_update: str, object_to_update: object, id_var="id"):
+        if '_id' in object_to_update.__dict__.keys():
+            print(object_to_update['_id'])
+            del object_to_update['_id']
         update_filter = {id_var: id_to_update}
-        set_params = {"$set": dict(object_to_update) if object_to_update is not dict else object_to_update}
+        set_params = {"$set": object_to_update.__dict__ if object_to_update is not dict else object_to_update}
         self.__db.update_one(update_filter, set_params)
 
     def delete(self, id_to_delete: str, id_var="id"):
