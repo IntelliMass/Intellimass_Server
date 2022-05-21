@@ -53,7 +53,7 @@ class SessionDB(MongoDB):
     def get_article_paperid(self, query_id: str, article_id: str):
         get_filter = {'id': query_id, 'articles': {'$elemMatch': {'paperId': article_id}}}
         found_obj = self._MongoDB__db.find_one(get_filter)
-        print(f'found_obj: {found_obj}')
+        # print(f'found_obj: {found_obj}')
         del found_obj['_id']
         return found_obj
 
