@@ -14,8 +14,11 @@ def append(articles_df: pd.DataFrame, query: str):
 
     def appendMostFrequentFromAbstract(articleData, query):
         abstract = articleData['abstract']
-
-        MY_STOP = ['article', 'based', query.lower(), query.lower() + 's', query.lower() + "'s"]
+        MY_STOP = ['article', 'based']
+        for q in query:
+            q_splitted = q.split()
+            for q in q_splitted:
+                MY_STOP.extend([q.lower(), q.lower() + 's', q.lower() + "'s"])
         for sign in string.punctuation:
             abstract = abstract.replace(sign, '')
 

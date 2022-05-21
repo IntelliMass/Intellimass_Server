@@ -3,7 +3,6 @@ import requests
 import json
 import pandas as pd
 import threading
-
 from modules import utils
 from modules.thirdParty import config
 
@@ -20,18 +19,33 @@ class SemanticScholarAPI:
         queryResults.extend(resData)
 
     @staticmethod
-    def get_articles(query: str, num_of_articles=200, offset=0):
+    def get_articles(query: list, operator: str, num_of_articles=200, offset=0):
         queryResults = []
-        roundedNumOfArticles = utils.roundup(num_of_articles)
         threads = []
-        for num in range(0, roundedNumOfArticles, 100):
-            t = threading.Thread(target=SemanticScholarAPI.__parallel_search, args=(query, offset + num, queryResults))
-            threads.append(t)
-            t.start()
-        for thread in threads:
-            thread.join()
+        if operator.upper() == 'AND':
+            roundedNumOfArticles = utils.roundup(num_of_articles)
+            query = "".join([q + '+' for q in query]).replace(' ',  '+')
+            for num in range(0, roundedNumOfArticles, 100):
+                t = threading.Thread(target=SemanticScholarAPI.__parallel_search, args=(query, offset + num, queryResults))
+                threads.append(t)
+                t.start()
+            for thread in threads:
+                thread.join()
 
-        articles_df = pd.DataFrame(queryResults)
+        if operator.upper() == 'OR':
+            roundedNumOfArticles = utils.roundup(floor(num_of_articles/len(query)))
+            for q in query:
+                for num in range(0, roundedNumOfArticles, 100):
+                    t = threading.Thread(target=SemanticScholarAPI.__parallel_search,
+                                         args=(q, utils.roundup(offset + num), queryResults))
+                    threads.append(t)
+            for thread in threads:
+                thread.start()
+            for thread in threads:
+                thread.join()
+
+        articles_df = pd.DataFrame(queryResults).sample(frac=1).reset_index(drop=True)
+        print(articles_df.loc[0])
         return articles_df
 
     @staticmethod

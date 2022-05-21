@@ -42,6 +42,8 @@ def get_post_data(*argv):
     data = []
     for key in argv:
         extractedKey = json.loads(request.data.decode('utf-8')).get(key)
+        if key == 'query':
+            extractedKey = extractedKey.split('+')
         if extractedKey is None:
             raise Exception(f"Response(response='Bad Request - {key}', status=400, \
                            headers=COMMON_HEADER_RESPONSE)")
@@ -123,7 +125,7 @@ def cluster_articles(articles_df: pd.DataFrame, session_obj: dict, num_of_cluste
         print(len(set(articles_df['cluster'])) == num_of_clusters)
     if 'cluster' in articles_df.columns and len(set(articles_df['cluster'])) == num_of_clusters:
         return articles_df
-    search_keys_list = session_obj['query'].split()
+    search_keys_list = session_obj['query'].split() if type(session_obj['query']) == type(str) else session_obj['query']
     lda_modeling = algorithms.kmeans_lda.LdaModeling(articles_df, search_keys_list, num_of_clusters)
     articles_df = lda_modeling.papers
     return articles_df

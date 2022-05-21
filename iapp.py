@@ -43,10 +43,10 @@ def query():
 
     start = time.time()
     try:
-        (query,) = utils.get_post_data('query')
+        (query, operator) = utils.get_post_data('query', 'operator')
     except Exception as res:
         return eval(str(res))
-    raw_articles = SemanticScholarAPI.get_articles(query)
+    raw_articles = SemanticScholarAPI.get_articles(query, operator)
     extended_articles = utils.article_extender(raw_articles, query)
     sessions_table_object = objects.SessionObject(query).__dict__
     extended_articles = utils.cluster_articles(extended_articles, sessions_table_object)
