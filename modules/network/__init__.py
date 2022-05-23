@@ -40,13 +40,11 @@ class Network:
         factor = 1.0 / max(temp_connections.values())
         for k in temp_connections.keys():
             temp_connections[k] = temp_connections[k] * factor
-        print(temp_connections)
         basic_size = 200
         connections_full_size_factor = 200
         self.articles_df['size'] = [basic_size] * len(self.articles_df)
         for node, value in temp_connections.items():
             self.articles_df.loc[self.articles_df['title'] == node, 'size'] += connections_full_size_factor * value
-        print(self.articles_df.loc[self.articles_df['title'] == "Risk Mitigation for Dynamic State Estimation Against Cyber Attacks and Unknown Inputs", 'size'])
 
     def connect_by_default(self):
         abstract_similarities = []
@@ -81,7 +79,6 @@ class Network:
                     )
         print(f"Abstract Network takes {time.time()-start} seconds")
         print(f"number of connections = {len(self.network)}")
-
 
     def connect_by_title(self, call_back_object=None):
         self.network = []

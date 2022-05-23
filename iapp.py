@@ -113,7 +113,6 @@ def get_network():
         articles_df, links_list = network.get_network()
     except ValueError as ve:
         return Response(response=str(ve), status=400, headers=utils.COMMON_HEADER_RESPONSE)
-    # articles_df.rename(columns={'paperId': 'id'}, inplace=True)
     articles_json = utils.articles_to_json(articles_df)
     return Response(response=json.dumps({"network": {"nodes": articles_json, "links": links_list}}), status=200, headers=utils.COMMON_HEADER_RESPONSE)
 

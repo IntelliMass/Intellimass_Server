@@ -1,6 +1,8 @@
 import pymongo
 from urllib.parse import quote_plus
+from multiprocessing import Lock
 
+lock = Lock()
 
 class MongoDB:
     __password = quote_plus("intel123")
@@ -28,7 +30,9 @@ class MongoDB:
             del object_to_update['_id']
         update_filter = {id_var: id_to_update}
         set_params = {"$set": object_to_update.__dict__ if object_to_update is not dict else object_to_update}
+        lock.acquire()
         self.__db.update_one(update_filter, set_params)
+        lock.release()
 
     def delete(self, id_to_delete: str, id_var="id"):
         delete_filter = {id_var: id_to_delete}

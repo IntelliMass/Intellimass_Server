@@ -154,31 +154,17 @@ def filter_articles_by_features(articles_df: pd.DataFrame, filters: list, cluste
     if (filters is None or filters == []) and (clusters is None or clusters == []):
         return articles_df
 
-    if filters is None:
-        filters = []
-
-    if clusters is None:
-        clusters = []
+    filters = [] if filters is None else filters
+    clusters = [] if clusters is None else [('cluster', clusters)]
 
     print(f"filters: {filters}\nclusters: {clusters}")
-    clusters = ('cluster', clusters)
-    filters = filters.append(clusters) if filters != [] else [clusters]
+    filters.extend(clusters)
 
     def common_filter(row, filter_feature, filter):
         return filter in row[filter_feature]
 
     def filter_authors(row, author):
         return author in [author['name'] for author in row['authors']]
-
-    # print(clusters)
-    # counter = 0
-    # for _, article in articles_df.iterrows():
-    #     if article['cluster'] in clusters[1]:
-    #         counter += 1
-    # print(f"len df {len(articles_df)}")
-    # print(f"Counter {counter}")
-    # pd.set_option("display.max_rows", None, "display.max_columns", None)
-    # print(articles_df['cluster'])
 
     for filter_feature, filter in filters:
         if filter_feature.lower() == 'authors':
@@ -240,9 +226,6 @@ def get_metadata(articles_df: pd.DataFrame):
 
 def get_clusters(articles_df: pd.DataFrame):
     clusters = articles_df['cluster'].value_counts().to_dict()
-    pd.set_option("display.max_rows", None, "display.max_columns", None)
-    print(articles_df['cluster'])
-    print(clusters)
     res = [{"title": title, "rank": value} for title, value in clusters.items()]
     return res
 
@@ -313,43 +296,48 @@ def generate_breadcrumb(breadcrumbs: list, query_list: list, clusters: list, met
         new_breadcrumb['time'] = datetime.datetime.now().strftime("%d/%m/%Y | %H:%M:%S")
         breadcrumbs.append(breadcrumbs)
 
+    else:
+        return None
+
     return breadcrumbs
 
 
 def update_breadcrumbs(sessions_table_object: dict, count: int, filters: list, clusters: list):
-    pass
-    # sessions_table_object['breadcrumbs'] = generate_breadcrumb(sessions_table_object['breadcrumbs'], sessions_table_object['query'], filters, clusters, count)
-    # session_new_object = SessionObject(sessions_table_object['query'], sessions_table_object['articles'], sessions_table_object['offset'],
-    #               sessions_table_object["id"], sessions_table_object['breadcrumbs'])
-    # sessionsTable.update(sessions_table_object["id"], session_new_object)
+    t_breadcrumbs = generate_breadcrumb(sessions_table_object['breadcrumbs'], sessions_table_object['query'], filters, clusters, count)
+    if t_breadcrumbs is not None:
+        print(t_breadcrumbs)
+        session_new_object = SessionObject(sessions_table_object['query'], sessions_table_object['articles'], sessions_table_object['offset'],
+                  sessions_table_object["id"], sessions_table_object['breadcrumbs'])
+        # print(f"id: {session_new_object.id}\nobject: {vars(session_new_object)}")
+        sessionsTable.update(session_new_object.id, session_new_object)
 
 
 def get_breadcrumbs(query_id: str):
 
-    return [{
-            "index": 0,
-            "time": "2015-09-01 | 14:32:15",
-            "queryList": ["cyber", "IOT"],
-            "clusters": ["Systems", "Software", "Network"],
-            "metadataList": ["2020", "Remy Martiti"],
-            "count": 100
-        },
-        {
-            "index": 1,
-            "time": "2015-09-01 | 14:32:17",
-            "queryList": ["cyber"],
-            "clusters": ["Systems", "Software", "Network"],
-            "metadataList": ["2020", "Remy Martiti"],
-            "count": 100
-        },
-        {
-            "index": 2,
-            "time": "2015-09-01 | 14:32:19",
-            "queryList": ["cyber", "IOT"],
-            "clusters": ["Systems", "Network"],
-            "metadataList": ["2020", "Remy Martiti"],
-            "count": 100
-        },]
+    # return [{
+    #         "index": 0,
+    #         "time": "2015-09-01 | 14:32:15",
+    #         "queryList": ["cyber", "IOT"],
+    #         "clusters": ["Systems", "Software", "Network"],
+    #         "metadataList": ["2020", "Remy Martiti"],
+    #         "count": 100
+    #     },
+    #     {
+    #         "index": 1,
+    #         "time": "2015-09-01 | 14:32:17",
+    #         "queryList": ["cyber"],
+    #         "clusters": ["Systems", "Software", "Network"],
+    #         "metadataList": ["2020", "Remy Martiti"],
+    #         "count": 100
+    #     },
+    #     {
+    #         "index": 2,
+    #         "time": "2015-09-01 | 14:32:19",
+    #         "queryList": ["cyber", "IOT"],
+    #         "clusters": ["Systems", "Network"],
+    #         "metadataList": ["2020", "Remy Martiti"],
+    #         "count": 100
+    #     },]
 
     sessions_table_object = sessionsTable.get(query_id)
     return sessions_table_object['breadcrumbs']

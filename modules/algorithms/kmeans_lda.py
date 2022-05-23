@@ -54,7 +54,7 @@ class LdaModeling:
     def __stopwords_string(self):
         print("__stopwords_string")
         self.stop_words = stopwords.words('english')
-        self.stop_words.extend(['from', 'subject', 're', 'edu', 'use'])
+        self.stop_words.extend(['from', 'subject', 're', 'edu', 'use', 'things', 'smart', 'devices'])
 
     def remove_stopwords(self, word_list):
         return [word for word in word_list if word not in self.stop_words]
@@ -100,7 +100,6 @@ class LdaModeling:
             self._current_cluster = num
             self.__lda_model_training(corpus, id2word)
         self.__papers = self.__papers.drop(labels=['cleaned_abstract', 'clean_abstract_str', 'x0', 'x1'], axis=1)
-        print(self.__papers['cluster'])
         self.__papers['cluster'] = self.__papers['cluster'].apply(lambda cluster:
                                                                   cluster.capitalize() if cluster[
                                                                       0].islower() else cluster)
@@ -122,19 +121,19 @@ class LdaModeling:
 
     def __top_topics(self):
         temp_topic_list = sorted(self._dict_of_topics, key=self._dict_of_topics.get,
-                                 reverse=True)[:self._num_of_clusters]
+                                 reverse=True)[:self._num_of_clusters + 1]
+        print(temp_topic_list)
         for index in range(self._num_of_clusters):
             if temp_topic_list[index] not in self._topics_list and temp_topic_list[index] not in self._search_keyword \
-                    and temp_topic_list[index] + 's' not in temp_topic_list and not temp_topic_list[index].isnumeric():
+                    and temp_topic_list[index] + 's' not in temp_topic_list:
                 valid_topic = temp_topic_list[index]
                 for freq_words in set(self.__papers['frequentWords'].explode()):
                     if valid_topic == freq_words.lower():
                         valid_topic = freq_words
-                        self._topics_list.append(valid_topic)
-                        self.__papers['cluster'] = self.__papers['cluster'].replace(self._current_cluster,
-                                                                            valid_topic)
                         break
-
+                self._topics_list.append(valid_topic)
+                self.__papers['cluster'] = self.__papers['cluster'].replace(self._current_cluster,
+                                                                            valid_topic)
 
     @property
     def topics_list(self):
