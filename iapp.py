@@ -4,6 +4,7 @@ from flask import Flask, Response
 from flask_cors import CORS
 import time
 import json
+import datetime
 
 ###################################################
 # MODULES MODULES MODULES MODULES MODULES MODULES #
@@ -195,6 +196,8 @@ def insert_article():
     collection_name, article_id = utils.get_post_data('collection_name', 'article_id')
     print(f'collection_name: {collection_name}, article_id: {article_id}')
     articles_obj = sessionsTable.get_article_paperid(query_id, article_id)
+    articles_obj['articles'][0]['query_word'] = articles_obj['query']
+    articles_obj['articles'][0]['timestamp'] = datetime.datetime.now().strftime("%d/%m/%Y | %H:%M:%S")
     print(f'articles_obj: {articles_obj}')
     privateCollectionsTable.update_paper(user_id, collection_name, articles_obj['articles'][0])
     # return Response(response=json.dumps({'user_id': user_id}), status=200, headers=utils.COMMON_HEADER_RESPONSE)
