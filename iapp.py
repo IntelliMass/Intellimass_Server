@@ -79,7 +79,7 @@ def get_articles():
     print(f"len articles: {len(articles_df)}")
     articles_df = utils.filter_articles_by_features(articles_df, filters, clusters)
     articles_df = utils.cluster_articles(articles_df, sessions_table_object, num_of_clusters)
-    utils.update_breadcrumbs(sessions_table_object, count, filters, clusters)
+    # utils.update_breadcrumbs(sessions_table_object, count, filters, clusters)
     articles_json = utils.articles_to_json(articles_df)
     print(f"len articles: {len(articles_json)}")
     return Response(response=json.dumps({"articles": articles_json}), status=200, headers=utils.COMMON_HEADER_RESPONSE)
