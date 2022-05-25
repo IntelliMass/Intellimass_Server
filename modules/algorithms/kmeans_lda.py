@@ -12,6 +12,7 @@ from sklearn.decomposition import PCA
 from sklearn.feature_extraction.text import TfidfVectorizer
 
 TOPICS_NUM = 1
+MY_STOP_WORDS = ['from', 'subject', 're', 'edu', 'use', 'things', 'smart', 'devices', 'new', 'proposed', 'try:based']
 
 
 class LdaModeling:
@@ -54,7 +55,7 @@ class LdaModeling:
     def __stopwords_string(self):
         print("__stopwords_string")
         self.stop_words = stopwords.words('english')
-        self.stop_words.extend(['from', 'subject', 're', 'edu', 'use', 'things', 'smart', 'devices'])
+        self.stop_words.extend(MY_STOP_WORDS)
 
     def remove_stopwords(self, word_list):
         return [word for word in word_list if word not in self.stop_words]
@@ -70,7 +71,11 @@ class LdaModeling:
     def kmeans_papers(self):
         print('kmeans_papers')
         vectorizer = TfidfVectorizer(sublinear_tf=True, min_df=5, max_df=0.95)
-        x = vectorizer.fit_transform(self.__papers['clean_abstract_str'])
+        try:
+            x = vectorizer.fit_transform(self.__papers['clean_abstract_str'])
+        except ValueError:
+            print(self.__papers['clean_abstract_str'])
+            raise Exception("Empty (?)")
         kmeans = KMeans(n_clusters=self._num_of_clusters, random_state=42)
         kmeans.fit(x)
         clusters = kmeans.labels_
@@ -100,9 +105,12 @@ class LdaModeling:
             self._current_cluster = num
             self.__lda_model_training(corpus, id2word)
         self.__papers = self.__papers.drop(labels=['cleaned_abstract', 'clean_abstract_str', 'x0', 'x1'], axis=1)
-        self.__papers['cluster'] = self.__papers['cluster'].apply(lambda cluster:
-                                                                  cluster.capitalize() if cluster[
-                                                                      0].islower() else cluster)
+        try:
+            self.__papers['cluster'] = self.__papers['cluster'].apply(lambda cluster:
+                                                                      cluster.capitalize() if cluster[
+                                                                          0].islower() else cluster)
+        except TypeError:
+            print(set(self.__papers['cluster']))
 
     def __lda_model_training(self, corpus, id2word, num_topic=TOPICS_NUM):
         # Build LDA model
@@ -121,12 +129,12 @@ class LdaModeling:
 
     def __top_topics(self):
         temp_topic_list = sorted(self._dict_of_topics, key=self._dict_of_topics.get,
-                                 reverse=True)[:self._num_of_clusters + 1]
+                                 reverse=True)[:self._num_of_clusters + 2]
         print(temp_topic_list)
-        for index in range(self._num_of_clusters):
-            if temp_topic_list[index] not in self._topics_list and temp_topic_list[index] not in self._search_keyword \
-                    and temp_topic_list[index] + 's' not in temp_topic_list:
-                valid_topic = temp_topic_list[index]
+        for topic in temp_topic_list:
+            if topic not in self._topics_list and topic not in self._search_keyword \
+                    and topic + 's' not in temp_topic_list:
+                valid_topic = topic
                 for freq_words in set(self.__papers['frequentWords'].explode()):
                     if valid_topic == freq_words.lower():
                         valid_topic = freq_words

@@ -5,9 +5,10 @@ import pandas as pd
 import threading
 from modules import utils
 from modules.thirdParty import config
-
+import time
 
 class SemanticScholarAPI:
+    MAX_THREAD_FOR_SEC = 100
 
     @staticmethod
     def __parallel_search(query: str, offset: int, queryResults: list):
@@ -18,6 +19,55 @@ class SemanticScholarAPI:
         resData = dictRes['data']
         queryResults.extend(resData)
 
+    @staticmethod
+    def extendPaperWithTopics(paperId: str, topics: list, references: list):
+        url = f"https://api.semanticscholar.org/v1/paper/{paperId}"
+        res = requests.get(url=url, headers=config.SemanticScholarheader)
+        if res.status_code != 404:
+            dictRes = json.loads(res.text)
+            try:
+                topics.append(dictRes['topics'])
+            except KeyError:
+                topics.append(None)
+            try:
+                references.append(dictRes['references'])
+            except KeyError:
+                references.append(None)
+        else:
+            topics.append(None)
+            references.append(None)
+
+    @staticmethod
+    def extendArticles(listOfArticles: list, offset: int):
+        dfOfArticles = pd.DataFrame(listOfArticles)
+        dfOfArticles.dropna(subset=['abstract'], inplace=True)
+        topics = []
+        references = []
+        threads = []
+        count = 0
+        for _, article in dfOfArticles[offset:].iterrows():
+            threads.append(
+                threading.Thread(target=SemanticScholarAPI.extendPaperWithTopics, args=(article['paperId'], topics, references)))
+            threads[count].start()
+            count += 1
+            if count % (SemanticScholarAPI.MAX_THREAD_FOR_SEC - 1) == 0 and count != 0:
+                time.sleep(1.6)
+
+        for thread in threads:
+            thread.join()
+
+        if 'topics' not in dfOfArticles.columns:
+            dfOfArticles['topics'] = topics
+        else:
+            dfOfArticles.loc[offset:]['topics'] = topics
+        if 'references' not in dfOfArticles.columns:
+            dfOfArticles['references'] = references
+        else:
+            dfOfArticles.loc[offset:]['references'] = references
+
+        dfOfArticles.drop(dfOfArticles[dfOfArticles['topics'].str.len() == 0].index, inplace=True)
+        dfOfArticles.drop(dfOfArticles[dfOfArticles['references'].str.len() == 0].index, inplace=True)
+        return dfOfArticles
     @staticmethod
     def get_articles(query: list, operator: str, num_of_articles=200, offset=0):
         queryResults = []
@@ -44,8 +94,8 @@ class SemanticScholarAPI:
             for thread in threads:
                 thread.join()
 
-        articles_df = pd.DataFrame(queryResults).sample(frac=1).reset_index(drop=True)
-        print(articles_df.loc[0])
+        articles_df = SemanticScholarAPI.extendArticles(queryResults, offset)
+        # articles_df = pd.DataFrame(queryResults).sample(frac=1).reset_index(drop=True)
         return articles_df
 
     @staticmethod

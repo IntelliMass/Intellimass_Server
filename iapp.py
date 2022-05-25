@@ -5,6 +5,7 @@ from flask_cors import CORS
 import time
 import json
 import datetime
+import traceback
 
 ###################################################
 # MODULES MODULES MODULES MODULES MODULES MODULES #
@@ -70,19 +71,28 @@ def get_articles():
     :return:
     """
     try:
-        (query_id, count, filters, clusters, num_of_clusters) = utils.get_query_params('id', 'count', 'filters',
-                                                                                       'clusters', 'numOfClusters')
-    except Exception as res:
-        return str(res)
-    sessions_table_object = sessionsTable.get(query_id)
-    articles_df = utils.handle_articles_count(sessions_table_object, count)
-    print(f"len articles: {len(articles_df)}")
-    articles_df = utils.filter_articles_by_features(articles_df, filters, clusters)
-    articles_df = utils.cluster_articles(articles_df, sessions_table_object, num_of_clusters)
-    # utils.update_breadcrumbs(sessions_table_object, count, filters, clusters)
-    articles_json = utils.articles_to_json(articles_df)
-    print(f"len articles: {len(articles_json)}")
-    return Response(response=json.dumps({"articles": articles_json}), status=200, headers=utils.COMMON_HEADER_RESPONSE)
+        try:
+            (query_id, count, filters, clusters, num_of_clusters) = utils.get_query_params('id', 'count', 'filters',
+                                                                                           'clusters', 'numOfClusters')
+        except Exception as res:
+            return str(res)
+        sessions_table_object = sessionsTable.get(query_id)
+        articles_df = utils.handle_articles_count(sessions_table_object, count)
+        print(f"len articles after count: {len(articles_df)}")
+        articles_df = utils.filter_articles_by_features(articles_df, filters, clusters)
+        print(f"len articles after filter: {len(articles_df)}")
+        try:
+            articles_df = utils.cluster_articles(articles_df, sessions_table_object, num_of_clusters)
+        except (ValueError, KeyError):
+            return Response(response=json.dumps({"articles": []}), status=400, headers=utils.COMMON_HEADER_RESPONSE)
+        print(f"len articles after cluster: {len(articles_df)}")
+        # utils.update_breadcrumbs(sessions_table_object, count, filters, clusters)
+        articles_json = utils.articles_to_json(articles_df)
+        print(f"len articles: {len(articles_json)}")
+        return Response(response=json.dumps({"articles": articles_json}), status=200, headers=utils.COMMON_HEADER_RESPONSE)
+    except:
+        print(traceback.format_exc())
+        return Response(response=json.dumps({"articles": articles_json}), status=200, headers=utils.COMMON_HEADER_RESPONSE)
 
 
 @app.route('/metadata', methods=['GET'])
@@ -94,7 +104,10 @@ def get_metadata():
     sessions_table_object = sessionsTable.get(query_id)
     articles_df = utils.handle_articles_count(sessions_table_object, count)
     articles_df = utils.filter_articles_by_features(articles_df, filters, clusters)
-    articles_df = utils.cluster_articles(articles_df, sessions_table_object, num_of_clusters)
+    try:
+        articles_df = utils.cluster_articles(articles_df, sessions_table_object, num_of_clusters)
+    except (ValueError, KeyError):
+        return Response(response=json.dumps({"articles": []}), status=400, headers=utils.COMMON_HEADER_RESPONSE)
     metadata = utils.get_metadata(articles_df)
     return {"metadata": metadata}
 
@@ -135,6 +148,7 @@ def get_clusters():
     articles_df = utils.filter_articles_by_features(articles_df, filters, clusters)
     articles_df = utils.cluster_articles(articles_df, sessions_table_object, num_of_clusters)
     clusters = utils.get_clusters(articles_df)
+    print(clusters)
     return {"clusters": clusters}
 
 

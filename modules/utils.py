@@ -79,13 +79,16 @@ def get_query_params(*argv):
     data = []
     for key in argv:
         extractedKey = request.args.get(key)
-        print(key, extractedKey)
+        print(key, extractedKey, type(extractedKey))
         if key == 'filters' and \
                 (extractedKey is None or extractedKey == [] or extractedKey == ""):
             extractedKey = None
         elif key == 'filters':
             extractedKey = filters_parser(extractedKey)
         elif key == 'clusters':
+            if "[object Object]" in extractedKey:
+                raise Exception(
+                    f"Response(response='Bad Request - {key}', status=400, headers={COMMON_HEADER_RESPONSE})")
             extractedKey = clusters_parser(extractedKey)
         elif key == 'numOfClusters':
             extractedKey = int(extractedKey) if extractedKey is not None else 4
@@ -151,6 +154,7 @@ def filter_articles_by_features(articles_df: pd.DataFrame, filters: list, cluste
     Filter articles DataFrame by list of filters,
     filters contains tuples of (filter feature, filter)
     """
+    print(f"typeof filters {type(filters)} typeof clusters {type(filters)}")
     if (filters is None or filters == []) and (clusters is None or clusters == []):
         return articles_df
 
@@ -160,22 +164,36 @@ def filter_articles_by_features(articles_df: pd.DataFrame, filters: list, cluste
     print(f"filters: {filters}\nclusters: {clusters}")
     filters.extend(clusters)
 
+    print(f"columns: {articles_df.columns}")
+    print(f"frequentWord 0-5: {articles_df['frequentWords'][:5]}")
+
     def common_filter(row, filter_feature, filter):
-        return filter in row[filter_feature]
+        return filter.lower() in [string.lower() for string in row[filter_feature]]
 
     def filter_authors(row, author):
         return author in [author['name'] for author in row['authors']]
 
-    for filter_feature, filter in filters:
-        if filter_feature.lower() == 'authors':
-            articles_df = articles_df[articles_df.apply(filter_authors, axis=1, args=(filter,))]
-        if filter_feature == 'cluster':
-            print(filter)
-            articles_df = articles_df[articles_df['cluster'].isin(filter)]
-        else:
-            articles_df = articles_df[articles_df.apply(common_filter, axis=1, args=(filter_feature, filter))]
+    def filter_topics(row, topic):
+        return topic in [topic['topic'] for topic in row['topics']]
 
-    return articles_df
+    new_articles_df = pd.DataFrame()
+    for filter_feature, filter in filters:
+
+        if filter_feature.lower() == 'topics':
+            new_articles_df = new_articles_df.append(articles_df[articles_df.apply(filter_topics, axis=1, args=(filter,))],
+                                   ignore_index=True)
+        elif filter_feature.lower() == 'authors':
+            new_articles_df = new_articles_df.append(articles_df[articles_df.apply(filter_authors, axis=1, args=(filter,))],
+                                   ignore_index=True)
+        elif filter_feature == 'cluster':
+            print(filter)
+            new_articles_df = new_articles_df.append(articles_df[articles_df['cluster'].isin(filter)], ignore_index=True)
+        else:
+            temp = articles_df[articles_df.apply(common_filter, axis=1, args=(filter_feature, filter))]
+            new_articles_df = new_articles_df.append(temp, ignore_index=True)
+
+    new_articles_df.drop_duplicates(subset='title', ignore_index=True, inplace=True)
+    return new_articles_df
 
 
 def articles_to_json(articles_df: pd.DataFrame):
@@ -190,11 +208,17 @@ def get_metadata(articles_df: pd.DataFrame):
     authors_counter = []
     fields_of_study_counter = []
     years_counter = []
+    topics_counter = []
     for _, article in articles_df.iterrows():
-        frequent_words_counter.extend([frequent_word for frequent_word in article['frequentWords']])
+        topics_counter.extend([topicName['topic'] for topicName in article['topics']])
+        frequent_words_counter.extend([frequent_word.lower() for frequent_word in article['frequentWords']])
         authors_counter.extend([author['name'] for author in article['authors']])
         fields_of_study_counter.extend(article['fieldsOfStudy'] if article['fieldsOfStudy'] is not None else [])
         years_counter.append(article['year'])
+
+    most_common_topics = dict(Counter(topics_counter))
+    most_common_topics = [{"title": k , "rank": v} for k, v in sorted(most_common_topics.items(),
+                                    key=lambda item: item[1], reverse=True)[:MAX_COMMON_FEATURE]]
 
     most_common_frequent_words = dict(Counter(frequent_words_counter))
     most_common_frequent_words = [{"title": k if k[0].isupper() else k.capitalize(), "rank": v} for k, v in
@@ -220,7 +244,7 @@ def get_metadata(articles_df: pd.DataFrame):
         "fields_of_study": most_common_fields_of_study,
         "years": most_common_years,
         "authors": most_common_authors,
-        "topics": []
+        "topics": most_common_topics
     }
 
 
