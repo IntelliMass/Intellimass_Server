@@ -196,8 +196,8 @@ def filter_articles_by_features(articles_df: pd.DataFrame, filters: list, cluste
             temp = articles_df[articles_df.apply(common_filter, axis=1, args=(filter_feature, filter))]
             new_articles_df = new_articles_df.append(temp, ignore_index=True)
 
-    print(clusters)
-    new_articles_df = new_articles_df[new_articles_df['cluster'].isin(clusters)]
+    if clusters is not None and clusters != []:
+        new_articles_df = new_articles_df[new_articles_df['cluster'].isin(clusters)]
 
     new_articles_df.drop_duplicates(subset='title', ignore_index=True, inplace=True)
     return new_articles_df
