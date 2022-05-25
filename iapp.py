@@ -1,4 +1,3 @@
-import sys
 import os
 from flask import Flask, Response
 from flask_cors import CORS

@@ -123,9 +123,6 @@ def cluster_articles(articles_df: pd.DataFrame, session_obj: dict, num_of_cluste
     """
     Use K-Means clustering algorithm & NLP's LDA algorithm for give for each cluster unique name
     """
-    print('cluster' in articles_df.columns)
-    if 'cluster' in articles_df.columns:
-        print(len(set(articles_df['cluster'])) == num_of_clusters)
     if 'cluster' in articles_df.columns and len(set(articles_df['cluster'])) == num_of_clusters:
         return articles_df
     search_keys_list = session_obj['query'].split() if type(session_obj['query']) == type(str) else session_obj['query']
@@ -160,10 +157,11 @@ def filter_articles_by_features(articles_df: pd.DataFrame, filters: list, cluste
         return articles_df
 
     filters = [] if filters is None else filters
-    clusters = [] if clusters is None else [('cluster', clusters)]
+    clusters = [] if clusters is None else clusters
+    # clusters = [] if clusters is None else [('cluster', clusters)]
 
     print(f"filters: {filters}\nclusters: {clusters}")
-    filters.extend(clusters)
+    # filters.extend(clusters)
 
     print(f"columns: {articles_df.columns}")
     print(f"frequentWord 0-5: {articles_df['frequentWords'][:5]}")
@@ -187,9 +185,9 @@ def filter_articles_by_features(articles_df: pd.DataFrame, filters: list, cluste
         elif filter_feature.lower() == 'authors':
             new_articles_df = new_articles_df.append(articles_df[articles_df.apply(filter_authors, axis=1, args=(filter,))],
                                    ignore_index=True)
-        elif filter_feature == 'cluster':
-            print(filter)
-            new_articles_df = new_articles_df.append(articles_df[articles_df['cluster'].isin(filter)], ignore_index=True)
+        # elif filter_feature == 'cluster':
+        #     print(filter)
+        #     new_articles_df = new_articles_df.append(articles_df[articles_df['cluster'].isin(filter)], ignore_index=True)
 
         elif filter_feature == 'year':
             new_articles_df = new_articles_df.append(articles_df[articles_df['year'] == int(filter)], ignore_index=True)
@@ -197,6 +195,9 @@ def filter_articles_by_features(articles_df: pd.DataFrame, filters: list, cluste
         else:
             temp = articles_df[articles_df.apply(common_filter, axis=1, args=(filter_feature, filter))]
             new_articles_df = new_articles_df.append(temp, ignore_index=True)
+
+    print(clusters)
+    new_articles_df = new_articles_df[new_articles_df['cluster'].isin(clusters)]
 
     new_articles_df.drop_duplicates(subset='title', ignore_index=True, inplace=True)
     return new_articles_df

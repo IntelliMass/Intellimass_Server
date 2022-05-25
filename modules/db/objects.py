@@ -1,6 +1,5 @@
 import uuid
 import pandas as pd
-import datetime
 
 
 class SessionObject(object):
