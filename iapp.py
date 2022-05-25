@@ -94,6 +94,21 @@ def get_articles():
         return Response(response=json.dumps({"articles": []}), status=200, headers=utils.COMMON_HEADER_RESPONSE)
 
 
+@app.route('/word_search', methods=['GET'])
+def get_search():
+    (query_id, count, filters, clusters, num_of_clusters, search_word) = utils.get_query_params('id', 'count', 'filters'
+                                                                                                , 'clusters',
+                                                                                                'numOfClusters',
+                                                                                                'searchWord')
+    sessions_table_object = sessionsTable.get(query_id)
+    articles_df = utils.handle_articles_count(sessions_table_object, count)
+    articles_df = utils.filter_articles_by_features(articles_df, filters, clusters)
+    articles_df = utils.search_word_in_abstract(search_word, articles_df)
+    print(f'Length of dataframe after search filter {len(articles_df)}')
+    articles_json = utils.articles_to_json(articles_df)
+    return json.dumps({"articles": articles_json})
+
+
 @app.route('/metadata', methods=['GET'])
 def get_metadata():
     try:

@@ -372,3 +372,8 @@ def get_breadcrumbs(query_id: str):
 
     sessions_table_object = sessionsTable.get(query_id)
     return sessions_table_object['breadcrumbs']
+
+
+def search_word_in_abstract(word: str, articles_df: pd.DataFrame):
+    articles_filtered_by_word = articles_df[articles_df['abstract'].str.contains(word)]
+    return articles_filtered_by_word
