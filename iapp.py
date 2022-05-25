@@ -133,8 +133,16 @@ def get_network():
 
 @app.route('/getOne', methods=['GET'])
 def get_one():
-    article_id = utils.get_query_params('id')
-    return SemanticScholarAPI.get_one_article(article_id)
+    article_id, query_id = utils.get_query_params('id', 'query_id')
+    article = SemanticScholarAPI.get_one_article(article_id)
+    articles_obj = sessionsTable.get_article_paperid(query_id, article_id)
+    temp_article = json.loads(article)
+    print(f'temp_article {temp_article}')
+    temp_article['frequentWords'] = articles_obj['articles'][0]['frequentWords']
+    temp_article['cluster'] = articles_obj['articles'][0]['cluster']
+    temp_article['query_word'] = articles_obj['query']
+    article = json.dumps(temp_article)
+    return article
 
 
 @app.route('/clusters', methods=['GET'])
