@@ -38,14 +38,14 @@ class SemanticScholarAPI:
             references.append(None)
 
     @staticmethod
-    def extendArticles(listOfArticles: list, offset: int):
+    def extendArticles(listOfArticles: list):
         dfOfArticles = pd.DataFrame(listOfArticles)
         dfOfArticles.dropna(subset=['abstract'], inplace=True)
         topics = []
         references = []
         threads = []
         count = 0
-        for _, article in dfOfArticles[offset:].iterrows():
+        for _, article in dfOfArticles.iterrows():
             threads.append(
                 threading.Thread(target=SemanticScholarAPI.extendPaperWithTopics, args=(article['paperId'], topics, references)))
             threads[count].start()
@@ -56,24 +56,29 @@ class SemanticScholarAPI:
         for thread in threads:
             thread.join()
 
-        if 'topics' not in dfOfArticles.columns:
-            dfOfArticles['topics'] = topics
-        else:
-            dfOfArticles.loc[offset:]['topics'] = topics
-        if 'references' not in dfOfArticles.columns:
-            dfOfArticles['references'] = references
-        else:
-            dfOfArticles.loc[offset:]['references'] = references
+        print(f"lenOfArticles: {len(dfOfArticles)} lenOfTopics: {len(topics)} offset")
+        dfOfArticles['topics'] = topics
+        dfOfArticles['references'] = references
+        # if 'topics' not in dfOfArticles.columns:
+        #     dfOfArticles['topics'] = topics
+        # else:
+        #     dfOfArticles.loc[offset:]['topics'] = topics
+        # if 'references' not in dfOfArticles.columns:
+        #     dfOfArticles['references'] = references
+        # else:
+        #     dfOfArticles.loc[offset:]['references'] = references
 
         dfOfArticles.drop(dfOfArticles[dfOfArticles['topics'].str.len() == 0].index, inplace=True)
         dfOfArticles.drop(dfOfArticles[dfOfArticles['references'].str.len() == 0].index, inplace=True)
         return dfOfArticles
+
     @staticmethod
     def get_articles(query: list, operator: str, num_of_articles=200, offset=0):
         queryResults = []
         threads = []
         if operator.upper() == 'AND':
             roundedNumOfArticles = utils.roundup(num_of_articles)
+            print(query)
             query = "".join([q + '+' for q in query]).replace(' ',  '+')
             for num in range(0, roundedNumOfArticles, 100):
                 t = threading.Thread(target=SemanticScholarAPI.__parallel_search, args=(query, offset + num, queryResults))
@@ -94,7 +99,7 @@ class SemanticScholarAPI:
             for thread in threads:
                 thread.join()
 
-        articles_df = SemanticScholarAPI.extendArticles(queryResults, offset)
+        articles_df = SemanticScholarAPI.extendArticles(queryResults)
         # articles_df = pd.DataFrame(queryResults).sample(frac=1).reset_index(drop=True)
         return articles_df
 

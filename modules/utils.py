@@ -142,8 +142,9 @@ def handle_articles_count(session_object: dict, count: int):
     count = int(count)
     articles_df = pd.DataFrame(session_object["articles"])
     if count > len(articles_df):
-        new_articles_df = SemanticScholarAPI.get_articles(articles_df, offset=session_object["offset"])
-        articles_df.append(new_articles_df, ignore_index=True)
+        new_articles_df = SemanticScholarAPI.get_articles(session_object['query'],
+                                                operator=session_object["operator"], offset=session_object["offset"])
+        articles_df = articles_df.append(new_articles_df, ignore_index=True)
         articles_df = article_extender(articles_df, session_object["query"])
         sessionsTable.update(session_object["id"], session_object)
     return articles_df[:count]
@@ -176,6 +177,7 @@ def filter_articles_by_features(articles_df: pd.DataFrame, filters: list, cluste
     def filter_topics(row, topic):
         return topic in [topic['topic'] for topic in row['topics']]
 
+
     new_articles_df = pd.DataFrame()
     for filter_feature, filter in filters:
 
@@ -188,6 +190,10 @@ def filter_articles_by_features(articles_df: pd.DataFrame, filters: list, cluste
         elif filter_feature == 'cluster':
             print(filter)
             new_articles_df = new_articles_df.append(articles_df[articles_df['cluster'].isin(filter)], ignore_index=True)
+
+        elif filter_feature == 'year':
+            new_articles_df = new_articles_df.append(articles_df[articles_df['year'] == int(filter)], ignore_index=True)
+
         else:
             temp = articles_df[articles_df.apply(common_filter, axis=1, args=(filter_feature, filter))]
             new_articles_df = new_articles_df.append(temp, ignore_index=True)

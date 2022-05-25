@@ -25,11 +25,13 @@ class MongoDB:
         return objects
 
     def update(self, id_to_update: str, object_to_update: object, id_var="id"):
-        if '_id' in object_to_update.__dict__.keys():
+        if type(object_to_update) is type(object):
+            object_to_update = object_to_update.__dict__
+        if '_id' in object_to_update.keys():
             print(object_to_update['_id'])
             del object_to_update['_id']
         update_filter = {id_var: id_to_update}
-        set_params = {"$set": object_to_update.__dict__ if object_to_update is not dict else object_to_update}
+        set_params = {"$set": object_to_update}
         lock.acquire()
         self.__db.update_one(update_filter, set_params)
         lock.release()

@@ -50,9 +50,9 @@ def query():
         return eval(str(res))
     raw_articles = SemanticScholarAPI.get_articles(query, operator)
     extended_articles = utils.article_extender(raw_articles, query)
-    sessions_table_object = objects.SessionObject(query).__dict__
+    sessions_table_object = objects.SessionObject(query, operator).__dict__
     extended_articles = utils.cluster_articles(extended_articles, sessions_table_object)
-    object = objects.SessionObject(query, extended_articles, config.Defaults.numOfArticles_firstSearch)
+    object = objects.SessionObject(query, operator, extended_articles, config.Defaults.numOfArticles_firstSearch)
     print(object.breadcrumbs)
     sessionsTable.insert(object)
 
@@ -92,7 +92,7 @@ def get_articles():
         return Response(response=json.dumps({"articles": articles_json}), status=200, headers=utils.COMMON_HEADER_RESPONSE)
     except:
         print(traceback.format_exc())
-        return Response(response=json.dumps({"articles": articles_json}), status=200, headers=utils.COMMON_HEADER_RESPONSE)
+        return Response(response=json.dumps({"articles": []}), status=200, headers=utils.COMMON_HEADER_RESPONSE)
 
 
 @app.route('/metadata', methods=['GET'])
