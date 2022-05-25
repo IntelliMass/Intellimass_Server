@@ -8,7 +8,7 @@ class SessionObject(object):
         self.id = id if id is not None else str(uuid.uuid4())
         articles_df = pd.DataFrame(articles_df)
         articles_df['queryId'] = [self.id] * len(articles_df)
-        self.articles = articles_df
+        self.articles = articles_df.to_dict('records')
         self.offset = offset
         self.breadcrumbs = breadcrumbs if breadcrumbs else []
         self.operator = operator
