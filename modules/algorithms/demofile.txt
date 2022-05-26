@@ -1,0 +1,12 @@
+In this post we are going to build a web application which will compare the similarity between two documents. We will learn the very basics of natural language processing (NLP) which is a branch of artificial intelligence that deals with the interaction between computers and humans using the natural language.
+
+This post originally published in my lab Reverse Python.
+
+Let's start with the base structure of program but then we will add graphical interface to making the program much easier to use. Feel free to contribute this project in my GitHub.
+
+NLTK and Gensim
+Natural language toolkit (NLTK) is the most popular library for natural language processing (NLP) which was written in Python and has a big community behind it. NLTK also is very easy to learn, actually, it’ s the easiest natural language processing (NLP) library that we are going to use. It contains text processing libraries for tokenization, parsing, classification, stemming, tagging and semantic reasoning.
+
+Gensim is billed as a Natural Language Processing package that does ‘Topic Modeling for Humans’. But it is practically much more than that. It is a leading and a state-of-the-art package for processing texts, working with word vector models (such as Word2Vec, FastText etc)
+
+Topic models and word embedding are available in other packages like scikit, R etc. But the width and scope of facilities to build and evaluate topic models are unparalleled in gensim, plus many more convenient facilities for text processing. Another important benefit with gensim is that it allows you to manage big text files without loading the whole file into memory.
