@@ -299,15 +299,19 @@ def generate_breadcrumb(breadcrumbs: list, query_list: list, clusters: list, met
     if meta_data_list is None:
         meta_data_list = []
 
+    meta_data_list = [{"type": meta_data[0], "title": meta_data[1]} for meta_data in meta_data_list]
+
     print(clusters)
     print(meta_data_list)
 
     count = int(count)
 
+    timestamp = datetime.datetime.now() + datetime.timedelta(hours=3)
+
     if breadcrumbs is None or breadcrumbs == []:
         breadcrumbs = [{
             "index": 0,
-            "time": datetime.datetime.now().strftime("%d/%m/%Y | %H:%M:%S"),
+            "time": timestamp,
             "queryList": query_list,
             "clusters": clusters,
             "metadataList": meta_data_list,
@@ -316,31 +320,34 @@ def generate_breadcrumb(breadcrumbs: list, query_list: list, clusters: list, met
         return breadcrumbs
 
     new_breadcrumb = {
-        "queryList": breadcrumbs[-1]["queryList"],
+        "queryList": query_list,
         "clusters": clusters,
         "metadataList": meta_data_list,
         "count": count
     }
 
-    if new_breadcrumb != breadcrumbs[-1]:
-        new_breadcrumb['index'] = breadcrumbs[-1]['index']
-        new_breadcrumb['time'] = datetime.datetime.now().strftime("%d/%m/%Y | %H:%M:%S")
-        breadcrumbs.append(breadcrumbs)
+    t_breadcrumb = {
+        "queryList": breadcrumbs[-1]['queryList'],
+        "clusters": breadcrumbs[-1]['clusters'],
+        "metadataList": breadcrumbs[-1]['metadataList'],
+        "count": breadcrumbs[-1]['count']
+    }
 
-    else:
-        return None
+    if new_breadcrumb != t_breadcrumb:
+        new_breadcrumb['index'] = breadcrumbs[-1]['index'] + 1
+        new_breadcrumb['time'] = timestamp
+        breadcrumbs.append(new_breadcrumb)
 
     return breadcrumbs
 
 
 def update_breadcrumbs(sessions_table_object: dict, count: int, filters: list, clusters: list):
-    t_breadcrumbs = generate_breadcrumb(sessions_table_object['breadcrumbs'], sessions_table_object['query'], filters, clusters, count)
+    t_breadcrumbs = generate_breadcrumb(sessions_table_object['breadcrumbs'], sessions_table_object['query'], clusters, filters, count)
     if t_breadcrumbs is not None:
         print(t_breadcrumbs)
-        session_new_object = SessionObject(sessions_table_object['query'], sessions_table_object['articles'], sessions_table_object['offset'],
-                  sessions_table_object["id"], sessions_table_object['breadcrumbs'])
+        session_new_object = SessionObject(sessions_table_object['query'], sessions_table_object['operator'], sessions_table_object['articles'], sessions_table_object['offset'], sessions_table_object["id"], t_breadcrumbs)
         # print(f"id: {session_new_object.id}\nobject: {vars(session_new_object)}")
-        sessionsTable.update(session_new_object.id, session_new_object)
+        sessionsTable.update(session_new_object.id, session_new_object.__dict__)
 
 
 def get_breadcrumbs(query_id: str):

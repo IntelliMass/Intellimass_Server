@@ -85,7 +85,7 @@ def get_articles():
         except (ValueError, KeyError):
             return Response(response=json.dumps({"articles": []}), status=400, headers=utils.COMMON_HEADER_RESPONSE)
         print(f"len articles after cluster: {len(articles_df)}")
-        # utils.update_breadcrumbs(sessions_table_object, count, filters, clusters)
+        utils.update_breadcrumbs(sessions_table_object, count, filters, clusters)
         articles_json = utils.articles_to_json(articles_df)
         print(f"len articles: {len(articles_json)}")
         return Response(response=json.dumps({"articles": articles_json}), status=200, headers=utils.COMMON_HEADER_RESPONSE)
