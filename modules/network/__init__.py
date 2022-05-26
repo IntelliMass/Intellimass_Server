@@ -155,15 +155,15 @@ class Network:
                                                author['authorId'] in common_authors_in_both_articles]
                 if len(common_authors_in_both_articles) > 0:
                     t_link = {
-                        "target": self.articles_df['title'][i],
-                        "source": self.articles_df['title'][j],
+                        "target": article2['title'],
+                        "source": article1['title'],
                         "value": float("{:.4f}".format(common_authors_in_both_articles))
                     }
                     if t_link not in self.network:
                         self.network.append(
                             {
-                                "source": self.articles_df['title'][i],
-                                "target": self.articles_df['title'][j],
+                                "source": article1['title'],
+                                "target": article2['title'],
                                 "value": float("{:.4f}".format(common_authors_in_both_articles))
                             }
                         )

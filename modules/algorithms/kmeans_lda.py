@@ -17,6 +17,9 @@ MY_STOP_WORDS = ['from', 'subject', 're', 'edu', 'use', 'things', 'smart', 'devi
 
 class LdaModeling:
     def __init__(self, df_articles: pd.DataFrame, search_keys: list, num_of_clusters=4):
+        if len(df_articles) <= 5:
+            self.__papers = df_articles
+            return
         self._lda_model = None
         self.__papers = df_articles
         self._dict_of_topics = {}
@@ -133,12 +136,13 @@ class LdaModeling:
         print(temp_topic_list)
         for topic in temp_topic_list:
             if topic not in self._topics_list and topic not in self._search_keyword \
-                    and topic + 's' not in temp_topic_list:
+                    and topic + 's' not in self._topics_list:
                 valid_topic = topic
                 for freq_words in set(self.__papers['frequentWords'].explode()):
                     if valid_topic == freq_words.lower():
                         valid_topic = freq_words
                         break
+                print(f"valid topic: {valid_topic}")
                 self._topics_list.append(valid_topic)
                 self.__papers['cluster'] = self.__papers['cluster'].replace(self._current_cluster,
                                                                             valid_topic)

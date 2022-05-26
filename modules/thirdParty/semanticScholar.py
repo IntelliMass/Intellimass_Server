@@ -56,7 +56,6 @@ class SemanticScholarAPI:
         for thread in threads:
             thread.join()
 
-        print(f"lenOfArticles: {len(dfOfArticles)} lenOfTopics: {len(topics)} offset")
         dfOfArticles['topics'] = topics
         dfOfArticles['references'] = references
         # if 'topics' not in dfOfArticles.columns:
