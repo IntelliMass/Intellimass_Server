@@ -306,7 +306,7 @@ def generate_breadcrumb(breadcrumbs: list, query_list: list, clusters: list, met
 
     count = int(count)
 
-    timestamp = datetime.datetime.now() + datetime.timedelta(hours=3)
+    timestamp = (datetime.datetime.now() + datetime.timedelta(hours=3)).strftime("%d/%m/%Y | %H:%M:%S")
 
     if breadcrumbs is None or breadcrumbs == []:
         breadcrumbs = [{
