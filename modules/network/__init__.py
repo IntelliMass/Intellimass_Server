@@ -70,13 +70,19 @@ class Network:
         for i, similarities_array in enumerate(similarities):
             for j, similarity in enumerate(similarities_array):
                 if ((call_back_object is not None) or (similarity > self.ABSTRACT_THRESHOLD)) and i != j:
-                    self.network.append(
-                        {
-                            "source": self.articles_df['title'][i],
-                            "target": self.articles_df['title'][j],
+                    t_link = {
+                            "target": self.articles_df['title'][i],
+                            "source": self.articles_df['title'][j],
                             "value": float("{:.4f}".format(similarity))
                         }
-                    )
+                    if t_link not in self.network:
+                        self.network.append(
+                            {
+                                "source": self.articles_df['title'][i],
+                                "target": self.articles_df['title'][j],
+                                "value": float("{:.4f}".format(similarity))
+                            }
+                        )
         print(f"Abstract Network takes {time.time()-start} seconds")
         print(f"number of connections = {len(self.network)}")
 
@@ -92,13 +98,19 @@ class Network:
         for i, similarities_array in enumerate(similarities):
             for j, similarity in enumerate(similarities_array):
                 if ((call_back_object is not None) or (similarity > self.ABSTRACT_THRESHOLD)) and i != j:
-                    self.network.append(
-                        {
-                            "source": self.articles_df['paperId'][i],
-                            "target": self.articles_df['paperId'][j],
-                            "value": float("{:.4f}".format(similarity))
-                        }
-                    )
+                    t_link = {
+                        "target": self.articles_df['title'][i],
+                        "source": self.articles_df['title'][j],
+                        "value": float("{:.4f}".format(similarity))
+                    }
+                    if t_link not in self.network:
+                        self.network.append(
+                            {
+                                "source": self.articles_df['title'][i],
+                                "target": self.articles_df['title'][j],
+                                "value": float("{:.4f}".format(similarity))
+                            }
+                        )
         print(f"Title Network takes {time.time() - start} seconds")
         print(f"number of connections = {len(self.network)}")
 
@@ -113,13 +125,19 @@ class Network:
                 common_freqwords_in_both_articles = [freqword for freqword in article1['frequentWords'] if
                                                freqword in common_freqwords_in_both_articles]
                 if len(common_freqwords_in_both_articles) > 1:
-                    self.network.append(
-                        {
-                            "source": article1['title'],
-                            "target": article2['title'],
-                            "value": common_freqwords_in_both_articles
-                        }
-                    )
+                    t_link = {
+                        "target": self.articles_df['title'][i],
+                        "source": self.articles_df['title'][j],
+                        "value": float("{:.4f}".format(common_freqwords_in_both_articles))
+                    }
+                    if t_link not in self.network:
+                        self.network.append(
+                            {
+                                "source": self.articles_df['title'][i],
+                                "target": self.articles_df['title'][j],
+                                "value": float("{:.4f}".format(common_freqwords_in_both_articles))
+                            }
+                        )
         print(f"frequentWords Network takes {time.time() - start} seconds")
         print(f"number of connections = {len(self.network)}")
 
@@ -136,12 +154,18 @@ class Network:
                 common_authors_in_both_articles = [author['name'] for author in article1['authors'] if
                                                author['authorId'] in common_authors_in_both_articles]
                 if len(common_authors_in_both_articles) > 0:
-                    self.network.append(
-                        {
-                            "source": article1['title'],
-                            "target": article2['title'],
-                            "value": common_authors_in_both_articles
-                        }
-                    )
+                    t_link = {
+                        "target": self.articles_df['title'][i],
+                        "source": self.articles_df['title'][j],
+                        "value": float("{:.4f}".format(common_authors_in_both_articles))
+                    }
+                    if t_link not in self.network:
+                        self.network.append(
+                            {
+                                "source": self.articles_df['title'][i],
+                                "target": self.articles_df['title'][j],
+                                "value": float("{:.4f}".format(common_authors_in_both_articles))
+                            }
+                        )
         print(f"Authors Network takes {time.time() - start} seconds")
         print(f"number of connections = {len(self.network)}")
