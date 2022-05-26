@@ -164,7 +164,6 @@ def filter_articles_by_features(articles_df: pd.DataFrame, filters: list, cluste
     # filters.extend(clusters)
 
     print(f"columns: {articles_df.columns}")
-    print(f"frequentWord 0-5: {articles_df['frequentWords'][:5]}")
 
     def common_filter(row, filter_feature, filter):
         return filter.lower() in [string.lower() for string in row[filter_feature]]
@@ -175,7 +174,6 @@ def filter_articles_by_features(articles_df: pd.DataFrame, filters: list, cluste
     def filter_topics(row, topic):
         return topic in [topic['topic'] for topic in row['topics']]
 
-
     new_articles_df = pd.DataFrame()
     for filter_feature, filter in filters:
 
@@ -185,9 +183,6 @@ def filter_articles_by_features(articles_df: pd.DataFrame, filters: list, cluste
         elif filter_feature.lower() == 'authors':
             new_articles_df = new_articles_df.append(articles_df[articles_df.apply(filter_authors, axis=1, args=(filter,))],
                                    ignore_index=True)
-        # elif filter_feature == 'cluster':
-        #     print(filter)
-        #     new_articles_df = new_articles_df.append(articles_df[articles_df['cluster'].isin(filter)], ignore_index=True)
 
         elif filter_feature == 'year':
             new_articles_df = new_articles_df.append(articles_df[articles_df['year'] == int(filter)], ignore_index=True)
@@ -195,6 +190,9 @@ def filter_articles_by_features(articles_df: pd.DataFrame, filters: list, cluste
         else:
             temp = articles_df[articles_df.apply(common_filter, axis=1, args=(filter_feature, filter))]
             new_articles_df = new_articles_df.append(temp, ignore_index=True)
+
+    if len(new_articles_df) == 0:
+        new_articles_df = articles_df
 
     if clusters is not None and clusters != []:
         new_articles_df = new_articles_df[new_articles_df['cluster'].isin(clusters)]
