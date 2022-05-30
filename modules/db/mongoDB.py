@@ -1,6 +1,7 @@
 import pymongo
 from urllib.parse import quote_plus
 from multiprocessing import Lock
+import datetime
 
 lock = Lock()
 
@@ -57,11 +58,29 @@ class SessionDB(MongoDB):
         super().__init__("sessions")
 
     def get_article_paperid(self, query_id: str, article_id: str):
+        def find_article_in_articles(obj, arc_id):
+            for article in obj["articles"]:
+                if article["paperId"] == arc_id:
+                    return article
+            return None
+
+        def append_fields(all_articles, f_article):
+            if 'query' not in f_article.keys():
+                f_article['query'] = all_articles['query']
+            if 'timestamp' not in f_article.keys():
+                f_article['timestamp'] = datetime.datetime.now().strftime("%d/%m/%Y | %H:%M:%S")
+            return f_article
+
         get_filter = {'id': query_id, 'articles': {'$elemMatch': {'paperId': article_id}}}
         found_obj = self._MongoDB__db.find_one(get_filter)
-        # print(f'found_obj: {found_obj}')
-        del found_obj['_id']
-        return found_obj
+        if found_obj is not None:
+            found_article = find_article_in_articles(found_obj, article_id)
+            if found_article is not None:
+                if '_id' in found_article.keys():
+                    del found_article['_id']
+                found_article = append_fields(found_obj, found_article)
+                return found_article
+        return None
 
 
 class PrivateCollectionsDB(MongoDB):

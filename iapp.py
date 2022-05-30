@@ -152,8 +152,8 @@ def get_one():
     articles_obj = sessionsTable.get_article_paperid(query_id, article_id)
     temp_article = json.loads(article)
     print(f'temp_article {temp_article}')
-    temp_article['frequentWords'] = articles_obj['articles'][0]['frequentWords']
-    temp_article['cluster'] = articles_obj['articles'][0]['cluster']
+    temp_article['frequentWords'] = articles_obj['frequentWords']
+    temp_article['cluster'] = articles_obj['cluster']
     temp_article['query_word'] = articles_obj['query']
     article = json.dumps(temp_article)
     return article
@@ -230,14 +230,13 @@ def insert_article():
     """
     user_id, query_id = utils.get_query_params('user_id', 'query_id')
     collection_name, article_id = utils.get_post_data('collection_name', 'article_id')
-    print(f'collection_name: {collection_name}, article_id: {article_id}')
     articles_obj = sessionsTable.get_article_paperid(query_id, article_id)
-    articles_obj['articles'][0]['query_word'] = articles_obj['query']
-    articles_obj['articles'][0]['timestamp'] = datetime.datetime.now().strftime("%d/%m/%Y | %H:%M:%S")
-    print(f'articles_obj: {articles_obj}')
-    privateCollectionsTable.update_paper(user_id, collection_name, articles_obj['articles'][0])
-    # return Response(response=json.dumps({'user_id': user_id}), status=200, headers=utils.COMMON_HEADER_RESPONSE)
-    return utils.get_all_user_collections(user_id)
+    if articles_obj is not None:
+        privateCollectionsTable.update_paper(user_id, collection_name, articles_obj)
+        return utils.get_all_user_collections(user_id)
+    else:
+        return Response(response=utils.get_all_user_collections(user_id), status=400,
+                        headers=utils.COMMON_HEADER_RESPONSE)
 
 
 # works and integrated
