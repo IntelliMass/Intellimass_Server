@@ -122,20 +122,19 @@ class Network:
                 if article1['paperId'] == article2['paperId']:
                     continue
                 common_freqwords_in_both_articles = list(set(article1['frequentWords']).intersection(article2['frequentWords']))
-                common_freqwords_in_both_articles = [freqword for freqword in article1['frequentWords'] if
-                                               freqword in common_freqwords_in_both_articles]
+                common_freqwords_in_both_articles = sorted([freqword for freqword in article1['frequentWords'] if
+                                               freqword in common_freqwords_in_both_articles])
                 if len(common_freqwords_in_both_articles) > 1:
                     t_link = {
-                        "target": self.articles_df['title'][i],
-                        "source": self.articles_df['title'][j],
-                        "value": float("{:.4f}".format(common_freqwords_in_both_articles))
+                        "target": article2['title'],
+                        "source": article1['title'],
                     }
-                    if t_link not in self.network:
+                    if t_link not in [{"target": link["target"], "source": link["source"]} for link in self.network]:
                         self.network.append(
                             {
-                                "source": self.articles_df['title'][i],
-                                "target": self.articles_df['title'][j],
-                                "value": float("{:.4f}".format(common_freqwords_in_both_articles))
+                                "source": article1['title'],
+                                "target": article2['title'],
+                                "value": common_freqwords_in_both_articles
                             }
                         )
         print(f"frequentWords Network takes {time.time() - start} seconds")
@@ -157,14 +156,14 @@ class Network:
                     t_link = {
                         "target": article2['title'],
                         "source": article1['title'],
-                        "value": float("{:.4f}".format(common_authors_in_both_articles))
+                        "value": common_authors_in_both_articles
                     }
                     if t_link not in self.network:
                         self.network.append(
                             {
                                 "source": article1['title'],
                                 "target": article2['title'],
-                                "value": float("{:.4f}".format(common_authors_in_both_articles))
+                                "value": common_authors_in_both_articles
                             }
                         )
         print(f"Authors Network takes {time.time() - start} seconds")
