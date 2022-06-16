@@ -1,5 +1,5 @@
 import json
-
+import random
 import pandas as pd
 import re
 import gensim
@@ -14,11 +14,11 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 # nltk.download('stopwords')
 
 TOPICS_NUM = 1
-MY_STOP_WORDS = ['from', 'subject', 're', 'edu', 'use', 'things', 'smart', 'devices', 'new', 'proposed', 'try:based']
+MY_STOP_WORDS = ['from', 'subject', 're', 'edu', 'use', 'things', 'smart', 'devices', 'new', 'proposed', 'try:based', '-']
 
 
 class LdaModeling:
-    def __init__(self, df_articles: pd.DataFrame, search_keys: list, num_of_clusters=4):
+    def __init__(self, df_articles: pd.DataFrame, search_keys: list, num_of_clusters=4, re_flag=False):
         if len(df_articles) <= 5:
             self.__papers = df_articles
             return
@@ -29,6 +29,7 @@ class LdaModeling:
         self._num_of_clusters = num_of_clusters
         self._current_cluster = None
         self._search_keyword = search_keys
+        self._re_flag = re_flag
 
         self.__lower_query_list()
         self.__stopwords_string()
@@ -86,7 +87,7 @@ class LdaModeling:
         except ValueError:
             print(f"self.__papers['clean_abstract_str']: {self.__papers['clean_abstract_str']}")
             raise Exception("Empty (?)")
-        kmeans = KMeans(n_clusters=self._num_of_clusters, random_state=42)
+        kmeans = KMeans(n_clusters=self._num_of_clusters, random_state=random.randrange(10) if self._re_flag else 42)
         kmeans.fit(x)
         clusters = kmeans.labels_
         self.__papers['cluster'] = clusters
@@ -140,7 +141,6 @@ class LdaModeling:
     def __top_topics(self):
         temp_topic_list = sorted(self._dict_of_topics, key=self._dict_of_topics.get,
                                  reverse=True)[:self._num_of_clusters + 2]
-        print(f'temp_topic_list: {temp_topic_list}')
         for topic in temp_topic_list:
             if topic not in self._topics_list and topic.lower() not in self._search_keyword \
                     and topic + 's' not in self._topics_list:
@@ -149,7 +149,6 @@ class LdaModeling:
                     if valid_topic == freq_words.lower():
                         valid_topic = freq_words
                         break
-                print(f"valid topic: {valid_topic}")
                 self._topics_list.append(valid_topic)
                 self.__papers['cluster'] = self.__papers['cluster'].replace(self._current_cluster,
                                                                             valid_topic)

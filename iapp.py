@@ -11,7 +11,7 @@ import traceback
 from modules import utils
 from modules.thirdParty import SemanticScholarAPI, config
 from modules.db import sessionsTable, privateCollectionsTable, objects
-from modules.network import Network
+from modules.network import Network, SemanticNetwork
 # MODULES MODULES MODULES MODULES MODULES MODULES #
 ###################################################
 
@@ -48,13 +48,19 @@ def query():
     except Exception as res:
         return eval(str(res))
     raw_articles = SemanticScholarAPI.get_articles(query, operator)
+    print(f"get from 3rd finished {time.time() - start}")
     extended_articles = utils.article_extender(raw_articles, query)
+    print(f"extend finished: {time.time() - start}")
     sessions_table_object = objects.SessionObject(query, operator).__dict__
-    extended_articles = utils.cluster_articles(extended_articles, sessions_table_object)
+    try:
+        extended_articles = utils.cluster_articles(extended_articles, sessions_table_object)
+    except RuntimeError as rte:
+        return Response(response=str(rte), status=400, headers=utils.COMMON_HEADER_RESPONSE)
+    print(f"cluster finished: {time.time() - start}")
     object = objects.SessionObject(query, operator, extended_articles, config.Defaults.numOfArticles_firstSearch)
     print(object.breadcrumbs)
     sessionsTable.insert(object)
-
+    print(f"Push to DB finished: {time.time() - start}")
     ################################################
     print("time: " + str(time.time() - start))
     ################################################
@@ -76,14 +82,16 @@ def get_articles():
         except Exception as res:
             return str(res)
         sessions_table_object = sessionsTable.get(query_id)
+        print(f"len articles after first get: {len(sessions_table_object['articles'])}")
         articles_df = utils.handle_articles_count(sessions_table_object, count)
         print(f"len articles after count: {len(articles_df)}")
         articles_df = utils.filter_articles_by_features(articles_df, filters, clusters)
         print(f"len articles after filter: {len(articles_df)}")
-        try:
-            articles_df = utils.cluster_articles(articles_df, sessions_table_object, num_of_clusters)
-        except (ValueError, KeyError):
-            return Response(response=json.dumps({"articles": []}), status=400, headers=utils.COMMON_HEADER_RESPONSE)
+        if not clusters:
+            try:
+                articles_df = utils.cluster_articles(articles_df, sessions_table_object, num_of_clusters)
+            except RuntimeError as rte:
+                return Response(response=str(rte), status=400, headers=utils.COMMON_HEADER_RESPONSE)
         print(f"len articles after cluster: {len(articles_df)}")
         utils.update_breadcrumbs(sessions_table_object, count, filters, clusters)
         articles_json = utils.articles_to_json(articles_df)
@@ -91,7 +99,7 @@ def get_articles():
         return Response(response=json.dumps({"articles": articles_json}), status=200, headers=utils.COMMON_HEADER_RESPONSE)
     except:
         print(traceback.format_exc())
-        return Response(response=json.dumps({"articles": []}), status=200, headers=utils.COMMON_HEADER_RESPONSE)
+        return Response(response="Error", status=400, headers=utils.COMMON_HEADER_RESPONSE)
 
 
 @app.route('/word_search', methods=['GET'])
@@ -120,8 +128,8 @@ def get_metadata():
     articles_df = utils.filter_articles_by_features(articles_df, filters, clusters)
     try:
         articles_df = utils.cluster_articles(articles_df, sessions_table_object, num_of_clusters)
-    except (ValueError, KeyError):
-        return Response(response=json.dumps({"articles": []}), status=400, headers=utils.COMMON_HEADER_RESPONSE)
+    except RuntimeError as rte:
+        return Response(response=str(rte), status=400, headers=utils.COMMON_HEADER_RESPONSE)
     metadata = utils.get_metadata(articles_df)
     return {"metadata": metadata}
 
@@ -135,15 +143,49 @@ def get_network():
     sessions_table_object = sessionsTable.get(query_id)
     articles_df = utils.handle_articles_count(sessions_table_object, count)
     articles_df = utils.filter_articles_by_features(articles_df, filters, clusters)
-    articles_df = utils.cluster_articles(articles_df, sessions_table_object, num_of_clusters)
+    try:
+        articles_df = utils.cluster_articles(articles_df, sessions_table_object, num_of_clusters)
+    except RuntimeError as rte:
+        return Response(response=str(rte), status=400, headers=utils.COMMON_HEADER_RESPONSE)
     try:
         network = Network(articles_df, feature)
+        # network = SemanticNetwork(articles_df)
         articles_df, links_list = network.get_network()
+        # nodes, links_list = network.get_network()
     except ValueError as ve:
         return Response(response=str(ve), status=400, headers=utils.COMMON_HEADER_RESPONSE)
     articles_json = utils.articles_to_json(articles_df)
     return Response(response=json.dumps({"network": {"nodes": articles_json, "links": links_list}}), status=200, headers=utils.COMMON_HEADER_RESPONSE)
 
+
+@app.route('/semanticNetwork/set', methods=['GET'])
+def get_sematic_network_dataset():
+    try:
+        (query_id, count, filters, feature, clusters, num_of_clusters) = utils.get_query_params('id', 'count',
+                                                                                                'filters', 'feature',
+                                                                                                'clusters',
+                                                                                                'numOfClusters')
+    except Exception as res:
+        return eval(str(res))
+    sessions_table_object = sessionsTable.get(query_id)
+    articles_df = utils.handle_articles_count(sessions_table_object, count)
+    articles_df = utils.filter_articles_by_features(articles_df, filters, clusters)
+    try:
+        articles_df = utils.cluster_articles(articles_df, sessions_table_object, num_of_clusters)
+    except RuntimeError as rte:
+        return Response(response=str(rte), status=400, headers=utils.COMMON_HEADER_RESPONSE)
+    try:
+        network = SemanticNetwork(articles_df)
+        nodes, links = network.get_network()
+    except ValueError as ve:
+        return Response(response=str(ve), status=400, headers=utils.COMMON_HEADER_RESPONSE)
+    return Response(response=json.dumps({"network": {"nodes": nodes, "links": links}}), status=200,
+                    headers=utils.COMMON_HEADER_RESPONSE)
+
+
+@app.route('/semanticNetwork/one', methods=['GET'])
+def get_sematic_network_article():
+    pass
 
 @app.route('/getOne', methods=['GET'])
 def get_one():
@@ -165,16 +207,23 @@ def get_clusters():
         (query_id, count, filters, clusters, num_of_clusters) = utils.get_query_params('id', 'count', 'filters', 'clusters', 'numOfClusters')
     except Exception as res:
         return eval(str(res))
+    print("1 GET CLUSTERS GET CLUSTERS GET CLUSTERS GET CLUSTERS GET CLUSTERS GET CLUSTERS GET CLUSTERS")
     sessions_table_object = sessionsTable.get(query_id)
+    print("2 GET CLUSTERS GET CLUSTERS GET CLUSTERS GET CLUSTERS GET CLUSTERS GET CLUSTERS GET CLUSTERS")
     articles_df = utils.handle_articles_count(sessions_table_object, count)
+    print("3 GET CLUSTERS GET CLUSTERS GET CLUSTERS GET CLUSTERS GET CLUSTERS GET CLUSTERS GET CLUSTERS")
     articles_df = utils.filter_articles_by_features(articles_df, filters, clusters)
-    articles_df = utils.cluster_articles(articles_df, sessions_table_object, num_of_clusters)
+    print("4 GET CLUSTERS GET CLUSTERS GET CLUSTERS GET CLUSTERS GET CLUSTERS GET CLUSTERS GET CLUSTERS")
+    try:
+        articles_df = utils.cluster_articles(articles_df, sessions_table_object, num_of_clusters)
+        print("5 GET CLUSTERS GET CLUSTERS GET CLUSTERS GET CLUSTERS GET CLUSTERS GET CLUSTERS GET CLUSTERS")
+    except RuntimeError as rte:
+        return Response(response=str(rte), status=400, headers=utils.COMMON_HEADER_RESPONSE)
     clusters = utils.get_clusters(articles_df)
     print(clusters)
     return {"clusters": clusters}
 
 
-# works and integrated
 @app.route('/collections', methods=['GET'])
 def get_collections():
     """
@@ -306,55 +355,37 @@ def get_breadcrumbs():
     return Response(response=json.dumps({"breadCrumbList": breadcrumbs}), status=200, headers=utils.COMMON_HEADER_RESPONSE)
 
 
-    query_id = utils.get_query_params('id')
+@app.route('/new_iter', methods=['POST'])
+def new_iter():
+    """
+    Request for new iteration on clusters in specific session
+    """
+    try:
+        (query_id, filters, clusters) = utils.get_post_data('id', 'filters', 'clusters')
+        print(query_id, clusters, filters)
+    except Exception as res:
+        return eval(str(res))
+    sessions_table_object = sessionsTable.get(query_id)
+    sessions_table_object = utils.handle_new_iteration(sessions_table_object, filters, clusters)
+    sessionsTable.update(query_id, sessions_table_object)
+    return Response(status=200, headers=utils.COMMON_HEADER_RESPONSE)
 
-    import datetime
 
-    timest = datetime.datetime.now().strftime("%d/%m/%Y | %H:%M:%S")
-    mock_breadcrumbs = [
-        {
-            "index": 0,
-            "time": timest,
-            "queryList": ["cyber", "IOT"],
-            "clusters": ["Systems", "Software", "Network"],
-            "metadataList": [{"type": "year", "title": "2020"} , {"type": "authors", "title": "Remy Martiti"}],
-            "count": 100
-        },
-        {
-            "index": 1,
-            "time": timest,
-            "queryList": ["cyber"],
-            "clusters": ["Systems", "Software", "Network"],
-            "metadataList": [{"type": "year", "title": "2020"} , {"type": "authors", "title": "Remy Martiti"}],
-            "count": 100
-        },
-        {
-            "index": 2,
-            "time": timest,
-            "queryList": ["cyber", "IOT"],
-            "clusters": ["Systems", "Network"],
-            "metadataList": [{"type": "year", "title": "2020"} , {"type": "authors", "title": "Remy Martiti"}],
-            "count": 100
-        },
-        {
-            "index": 3,
-            "time": timest,
-            "queryList": ["cyber", "IOT"],
-            "clusters": ["Systems", "Software", "Network"],
-            "metadataList": [{"type": "year", "title": "2020"} , {"type": "authors", "title": "Remy Martiti"}],
-            "count": 100
-        }
-    ]
-    return {"breadCrumbList": mock_breadcrumbs}
+@app.route('/set_iter', methods=['POST'])
+def set_iter():
+    """
+    Request to jump into old iteration in specific session
+    """
+    try:
+        (query_id, iter_num) = utils.get_post_data('id', 'iter')
+    except Exception as res:
+        return eval(str(res))
+    sessions_table_object = sessionsTable.get(query_id)
+    sessions_table_object = utils.set_iter(sessions_table_object, iter_num)
+    sessionsTable.update(query_id, sessions_table_object)
+    return Response(json.dumps({}), status=200, headers=utils.COMMON_HEADER_RESPONSE)
+
 
 if __name__ == '__main__':
-
-    ##################################################################
-    # REMOVE REMOVE REMOVE REMOVE REMOVE REMOVE REMOVE REMOVE REMOVE #
-    # from waitress import serve
-    # if len(sys.argv) > 1 and sys.argv[1].lower() == 'prod':
-    #     serve(app, host="0.0.0.0", port=int(os.environ.get("PORT", utils.PORT)))
-    # REMOVE REMOVE REMOVE REMOVE REMOVE REMOVE REMOVE REMOVE REMOVE #
-    ##################################################################
-    # else:
     app.run(host='0.0.0.0', debug=True, port=int(os.environ.get("PORT", utils.PORT)))
+

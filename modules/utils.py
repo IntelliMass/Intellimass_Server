@@ -46,9 +46,16 @@ def get_post_data(*argv):
             extractedKey = extractedKey.split('+')
         if extractedKey is None:
             raise Exception(f"Response(response='Bad Request - {key}', status=400, \
-                           headers=COMMON_HEADER_RESPONSE)")
+                           headers={COMMON_HEADER_RESPONSE})")
         data.append(extractedKey)
     return tuple(data)
+
+
+def query_handler(query):
+    print(query)
+    tmp_query = []
+    for qu in query:
+        tmp_query.append(qu.strip())
 
 
 def filters_parser(filters: str):
@@ -107,6 +114,9 @@ def clean_articles_df(articles_df: pd.DataFrame):
         * Faulted abstract
     """
     articles_df.dropna(subset=["abstract"], inplace=True)
+    if 'level_0' in articles_df.columns:
+        articles_df.drop(['level_0'], axis=1, inplace=True)
+    articles_df.reset_index(inplace=True)
     return articles_df
 
 
@@ -126,8 +136,20 @@ def cluster_articles(articles_df: pd.DataFrame, session_obj: dict, num_of_cluste
     if 'cluster' in articles_df.columns and len(set(articles_df['cluster'])) == num_of_clusters:
         return articles_df
     search_keys_list = session_obj['query'].split() if type(session_obj['query']) == type(str) else session_obj['query']
-    lda_modeling = algorithms.kmeans_lda.LdaModeling(articles_df, search_keys_list, num_of_clusters)
-    articles_df = lda_modeling.papers
+    re_flag = False
+    for i in range(10):
+        lda_modeling = algorithms.kmeans_lda.LdaModeling(articles_df, search_keys_list, num_of_clusters, re_flag)
+        articles_df = lda_modeling.papers
+        print(f"Clusters: {set(articles_df['cluster'])} num_of_clusters: {num_of_clusters}")
+        for cluster in articles_df['cluster']:
+            if type(cluster) == type(int):
+                re_flag = True
+                continue
+        if (len(set(articles_df['cluster'])) == num_of_clusters):
+            break
+        re_flag = True
+    if (len(set(articles_df['cluster'])) != num_of_clusters):
+        raise RuntimeError("clusters.length != numOfClusters")
     return articles_df
 
 
@@ -143,6 +165,9 @@ def handle_articles_count(session_object: dict, count: int):
                                                 operator=session_object["operator"], offset=session_object["offset"])
         articles_df = articles_df.append(new_articles_df, ignore_index=True)
         articles_df = article_extender(articles_df, session_object["query"])
+        articles_df['queryId'] = articles_df['queryId'].fillna(articles_df['queryId'][0])
+        session_object['articles'] = articles_df.to_dict('records')
+        session_object['offset'] += 200
         sessionsTable.update(session_object["id"], session_object)
     return articles_df[:count]
 
@@ -158,15 +183,16 @@ def filter_articles_by_features(articles_df: pd.DataFrame, filters: list, cluste
 
     filters = [] if filters is None else filters
     clusters = [] if clusters is None else clusters
-    # clusters = [] if clusters is None else [('cluster', clusters)]
 
     print(f"filters: {filters}\nclusters: {clusters}")
-    # filters.extend(clusters)
 
     print(f"columns: {articles_df.columns}")
 
     def common_filter(row, filter_feature, filter):
+        if filter_feature not in row or row[filter_feature] is None:
+            return False
         return filter.lower() in [string.lower() for string in row[filter_feature]]
+
 
     def filter_authors(row, author):
         return author in [author['name'] for author in row['authors']]
@@ -197,7 +223,7 @@ def filter_articles_by_features(articles_df: pd.DataFrame, filters: list, cluste
     if clusters is not None and clusters != []:
         new_articles_df = new_articles_df[new_articles_df['cluster'].isin(clusters)]
 
-    new_articles_df.drop_duplicates(subset='title', ignore_index=True, inplace=True)
+    new_articles_df = new_articles_df.drop_duplicates(subset='title', ignore_index=True)
     return new_articles_df
 
 
@@ -205,6 +231,7 @@ def articles_to_json(articles_df: pd.DataFrame):
     """
     Return article objects list
     """
+    articles_df.drop(["index"], axis=1, inplace=True)
     return articles_df.to_dict('records')
 
 
@@ -343,42 +370,34 @@ def update_breadcrumbs(sessions_table_object: dict, count: int, filters: list, c
     t_breadcrumbs = generate_breadcrumb(sessions_table_object['breadcrumbs'], sessions_table_object['query'], clusters, filters, count)
     if t_breadcrumbs is not None:
         print(t_breadcrumbs)
-        session_new_object = SessionObject(sessions_table_object['query'], sessions_table_object['operator'], sessions_table_object['articles'], sessions_table_object['offset'], sessions_table_object["id"], t_breadcrumbs)
-        # print(f"id: {session_new_object.id}\nobject: {vars(session_new_object)}")
+        session_new_object = SessionObject(sessions_table_object['query'], sessions_table_object['operator'], sessions_table_object['articles'], sessions_table_object['offset'], sessions_table_object["id"], t_breadcrumbs, sessions_table_object['iteration'], sessions_table_object['iteration_cache'])
         sessionsTable.update(session_new_object.id, session_new_object.__dict__)
 
 
 def get_breadcrumbs(query_id: str):
-
-    # return [{
-    #         "index": 0,
-    #         "time": "2015-09-01 | 14:32:15",
-    #         "queryList": ["cyber", "IOT"],
-    #         "clusters": ["Systems", "Software", "Network"],
-    #         "metadataList": ["2020", "Remy Martiti"],
-    #         "count": 100
-    #     },
-    #     {
-    #         "index": 1,
-    #         "time": "2015-09-01 | 14:32:17",
-    #         "queryList": ["cyber"],
-    #         "clusters": ["Systems", "Software", "Network"],
-    #         "metadataList": ["2020", "Remy Martiti"],
-    #         "count": 100
-    #     },
-    #     {
-    #         "index": 2,
-    #         "time": "2015-09-01 | 14:32:19",
-    #         "queryList": ["cyber", "IOT"],
-    #         "clusters": ["Systems", "Network"],
-    #         "metadataList": ["2020", "Remy Martiti"],
-    #         "count": 100
-    #     },]
-
     sessions_table_object = sessionsTable.get(query_id)
+    breadcrumbs = []
     return sessions_table_object['breadcrumbs']
 
 
 def search_word_in_abstract(word: str, articles_df: pd.DataFrame):
     articles_filtered_by_word = articles_df[articles_df['abstract'].str.contains(word)]
     return articles_filtered_by_word
+
+
+def handle_new_iteration(sessions_table_object, filters, clusters):
+    clusters = list(clusters)
+    clusters = [cluster['title'] for cluster in clusters]
+    filters = list(filters)
+    count = sessions_table_object['breadcrumbs'][-1]['count']
+    articles_df = sessions_table_object['articles'][:count]
+    new_articles_df = filter_articles_by_features(articles_df, filters, clusters)
+    sessions_table_object['iteration'] += 1
+    sessions_table_object['iteration_cache'] = sessions_table_object['iteration_cache'].append(articles_df.to_dict('records')) if not None else [articles_df.to_dict('records')]
+    sessions_table_object['articles'] = new_articles_df.to_dict('records')
+    return sessions_table_object
+
+
+def set_iter(sessions_table_object, iter_num):
+    pass
+

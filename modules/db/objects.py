@@ -3,7 +3,10 @@ import pandas as pd
 
 
 class SessionObject(object):
-    def __init__(self, query: str, operator: str, articles_df: pd.DataFrame = None, offset: int = None, id=None, breadcrumbs=None):
+    def __init__(self, query: str, operator: str, articles_df: pd.DataFrame = None, offset: int = None, id=None, breadcrumbs=None, iteration=0,
+                 iteration_cache=None):
+        if iteration_cache is None:
+            iteration_cache = []
         self.query = query
         self.id = id if id is not None else str(uuid.uuid4())
         articles_df = pd.DataFrame(articles_df) if type(articles_df) != pd.DataFrame else articles_df
@@ -13,6 +16,8 @@ class SessionObject(object):
         self.breadcrumbs = breadcrumbs if breadcrumbs is not None else []
         print(f"SESEESION breadcrumbs {breadcrumbs}")
         self.operator = operator
+        self.iteration = iteration
+        self.iteration_cache = iteration_cache
 
 
 class PrivateCollectionObject(object):

@@ -5,7 +5,7 @@ from collections import Counter
 import pandas as pd
 import itertools
 from modules.algorithms import BertTextSimilarity
-
+from modules.network.semantic_network import SemanticNetwork
 
 class Network:
 

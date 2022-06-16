@@ -58,14 +58,6 @@ class SemanticScholarAPI:
 
         dfOfArticles['topics'] = topics
         dfOfArticles['references'] = references
-        # if 'topics' not in dfOfArticles.columns:
-        #     dfOfArticles['topics'] = topics
-        # else:
-        #     dfOfArticles.loc[offset:]['topics'] = topics
-        # if 'references' not in dfOfArticles.columns:
-        #     dfOfArticles['references'] = references
-        # else:
-        #     dfOfArticles.loc[offset:]['references'] = references
 
         dfOfArticles.drop(dfOfArticles[dfOfArticles['topics'].str.len() == 0].index, inplace=True)
         dfOfArticles.drop(dfOfArticles[dfOfArticles['references'].str.len() == 0].index, inplace=True)
