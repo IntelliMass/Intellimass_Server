@@ -194,9 +194,13 @@ def get_one():
     articles_obj = sessionsTable.get_article_paperid(query_id, article_id)
     temp_article = json.loads(article)
     print(f'temp_article {temp_article}')
-    temp_article['frequentWords'] = articles_obj['frequentWords']
-    temp_article['cluster'] = articles_obj['cluster']
-    temp_article['query_word'] = articles_obj['query']
+    if articles_obj is not None:
+        if articles_obj['frequentWords'] is not None:
+            temp_article['frequentWords'] = articles_obj['frequentWords']
+        if articles_obj['cluster'] is not None:
+            temp_article['cluster'] = articles_obj['cluster']
+        if articles_obj['query'] is not None:
+            temp_article['query_word'] = articles_obj['query']
     article = json.dumps(temp_article)
     return article
 
