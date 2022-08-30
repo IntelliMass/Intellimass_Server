@@ -7,11 +7,19 @@ from modules import utils
 from modules.thirdParty import config
 import time
 
+
 class SemanticScholarAPI:
     MAX_THREAD_FOR_SEC = 100
 
     @staticmethod
     def __parallel_search(query: str, offset: int, queryResults: list):
+        """
+        Thread Function
+        :param query: User's query
+        :param offset: offset of articles searched for Semantic Scholar API
+        :param queryResults: Searchts in DataFrame
+        :return:
+        """
         query = query.replace(' ', '+')
         url = f"http://api.semanticscholar.org/graph/v1/paper/search?query={query}&offset={offset}&limit=100&fields=title,authors,isOpenAccess,fieldsOfStudy,year,abstract,venue"
         res = requests.get(url, headers=config.SemanticScholarheader)
@@ -21,6 +29,13 @@ class SemanticScholarAPI:
 
     @staticmethod
     def extendPaperWithTopics(paperId: str, topics: list, references: list):
+        """
+        For each paper get the topics provided by the API and push to the articles list.
+        Topics is not provided in the basic search only article by article.
+        :param paperId: UID of paper in Semantic Scholar :type str
+        :param topics: list of topics :type list
+        :param references: list of references :type list
+        """
         url = f"https://api.semanticscholar.org/v1/paper/{paperId}"
         res = requests.get(url=url, headers=config.SemanticScholarheader)
         if res.status_code != 404:
@@ -65,6 +80,14 @@ class SemanticScholarAPI:
 
     @staticmethod
     def get_articles(query: list, operator: str, num_of_articles=200, offset=0):
+        """
+
+        :param query: User's query :type list
+        :param operator: Operator provided by user :type str
+        :param num_of_articles: :type int
+        :param offset: :type int
+        :return: Dataframe of articles :type pd.DataFrame
+        """
         queryResults = []
         threads = []
         if operator.upper() == 'AND':
@@ -91,11 +114,14 @@ class SemanticScholarAPI:
                 thread.join()
 
         articles_df = SemanticScholarAPI.extendArticles(queryResults)
-        # articles_df = pd.DataFrame(queryResults).sample(frac=1).reset_index(drop=True)
         return articles_df
 
     @staticmethod
     def get_one_article(article_id: str):
+        """
+        :param article_id: UID of paper in Semantic Scholar :type str
+        :return: object of the artciels metadata :type dict
+        """
         return requests.get(f"https://api.semanticscholar.org/v1/paper/{article_id}", headers=config.SemanticScholarheader).text
 
 

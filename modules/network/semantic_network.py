@@ -67,6 +67,7 @@ class SemanticNetwork:
                         if word1 != word2 and word1 in sentence and word2 in sentence:
                             t_links.append((word1, word2))
 
+
         counted = Counter(t_links)
         counted = counted.most_common(math.floor(len(counted) / 10))
         for link, value in counted:
@@ -75,26 +76,6 @@ class SemanticNetwork:
                 "target": link[1],
                 "size": value / 5
             })
-
-    def get_network(self):
-        return self.nodes, self.links
-
-
-class SematicNetorkArticle:
-    def __init__(self, aricle_text):
-        self.article_text = aricle_text
-        self.sentences = []
-        self.words = []
-        self.links = []
-        self.nodes = []
-        self.pre_process()
-        self.link_network()
-
-    def pre_process(self):
-        pass
-
-    def link_network(self):
-        pass
 
     def get_network(self):
         return self.nodes, self.links

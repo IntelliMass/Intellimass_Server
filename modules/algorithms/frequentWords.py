@@ -11,8 +11,12 @@ def append(articles_df: pd.DataFrame, query: str):
     :param query: :type: str (query to ignore)
     :return: articlesDF with frequent words column
     """
-
     def appendMostFrequentFromAbstract(articleData, query):
+        """
+        :param articleData:  article Object (Row in the DataFrame)
+        :param query: User's query to ignore
+        :return: Frequencies of words in abstract
+        """
         abstract = articleData['abstract']
         MY_STOP = ['article', 'based']
         for q in query:

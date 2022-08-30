@@ -1,10 +1,8 @@
 import os
-from flask import Flask, Response
+from flask import Flask, Response, request
 from flask_cors import CORS
 import time
 import json
-import datetime
-import traceback
 
 ###################################################
 # MODULES MODULES MODULES MODULES MODULES MODULES #
@@ -48,32 +46,28 @@ def query():
     except Exception as res:
         return eval(str(res))
     raw_articles = SemanticScholarAPI.get_articles(query, operator)
-    print(f"get from 3rd finished {time.time() - start}")
     extended_articles = utils.article_extender(raw_articles, query)
-    print(f"extend finished: {time.time() - start}")
     sessions_table_object = objects.SessionObject(query, operator).__dict__
     try:
         extended_articles = utils.cluster_articles(extended_articles, sessions_table_object)
     except RuntimeError as rte:
         return Response(response=str(rte), status=400, headers=utils.COMMON_HEADER_RESPONSE)
-    print(f"cluster finished: {time.time() - start}")
     object = objects.SessionObject(query, operator, extended_articles, config.Defaults.numOfArticles_firstSearch)
-    print(object.breadcrumbs)
     sessionsTable.insert(object)
-    print(f"Push to DB finished: {time.time() - start}")
-    ################################################
-    print("time: " + str(time.time() - start))
-    ################################################
-
     return Response(response=json.dumps({'queryId': object.id}), status=200, headers=utils.COMMON_HEADER_RESPONSE)
 
 
 @app.route('/articles', methods=['GET'])
 def get_articles():
     """
-    Steps:
-        1.
-    :return:
+    gets articles by given session_id
+    5 parameter:
+        id: session ID
+        count: number of articles user by user choice
+        filters: chosen filters on the articles
+        clusters: chosen clusters by the user
+        numOfClusters: chosen number of clusters to dived the articles dataset
+    :return: 200/400
     """
     try:
         try:
@@ -82,28 +76,33 @@ def get_articles():
         except Exception as res:
             return str(res)
         sessions_table_object = sessionsTable.get(query_id)
-        print(f"len articles after first get: {len(sessions_table_object['articles'])}")
         articles_df = utils.handle_articles_count(sessions_table_object, count)
-        print(f"len articles after count: {len(articles_df)}")
         articles_df = utils.filter_articles_by_features(articles_df, filters, clusters)
-        print(f"len articles after filter: {len(articles_df)}")
         if not clusters:
             try:
                 articles_df = utils.cluster_articles(articles_df, sessions_table_object, num_of_clusters)
             except RuntimeError as rte:
                 return Response(response=str(rte), status=400, headers=utils.COMMON_HEADER_RESPONSE)
-        print(f"len articles after cluster: {len(articles_df)}")
         utils.update_breadcrumbs(sessions_table_object, count, filters, clusters)
         articles_json = utils.articles_to_json(articles_df)
-        print(f"len articles: {len(articles_json)}")
         return Response(response=json.dumps({"articles": articles_json}), status=200, headers=utils.COMMON_HEADER_RESPONSE)
     except:
-        print(traceback.format_exc())
         return Response(response="Error", status=400, headers=utils.COMMON_HEADER_RESPONSE)
 
 
 @app.route('/word_search', methods=['GET'])
 def get_search():
+    """
+    gets articles by given session_id
+    6 parameter:
+        id: session ID
+        count: number of articles user by user choice
+        filters: chosen filters on the articles
+        clusters: chosen clusters by the user
+        numOfClusters: chosen number of clusters to dived the articles dataset
+        searchWord: Inserted free search
+    :return: 200/400
+    """
     (query_id, count, filters, clusters, num_of_clusters, search_word) = utils.get_query_params('id', 'count', 'filters'
                                                                                                 , 'clusters',
                                                                                                 'numOfClusters',
@@ -112,13 +111,22 @@ def get_search():
     articles_df = utils.handle_articles_count(sessions_table_object, count)
     articles_df = utils.filter_articles_by_features(articles_df, filters, clusters)
     articles_df = utils.search_word_in_abstract(search_word, articles_df)
-    print(f'Length of dataframe after search filter {len(articles_df)}')
     articles_json = utils.articles_to_json(articles_df)
     return json.dumps({"articles": articles_json})
 
 
 @app.route('/metadata', methods=['GET'])
 def get_metadata():
+    """
+    gets metadata by given session_id
+    5 parameter:
+        id: session ID
+        count: number of articles user by user choice
+        filters: chosen filters on the articles
+        clusters: chosen clusters by the user
+        numOfClusters: chosen number of clusters to dived the articles dataset
+    :return: 200/400
+    """
     try:
         (query_id, count, filters, clusters, num_of_clusters) = utils.get_query_params('id', 'count', 'filters', 'clusters', 'numOfClusters')
     except Exception as res:
@@ -134,35 +142,21 @@ def get_metadata():
     return {"metadata": metadata}
 
 
-@app.route('/network', methods=['GET'])
-def get_network():
-    try:
-        (query_id, count, filters, feature, clusters, num_of_clusters) = utils.get_query_params('id', 'count', 'filters', 'feature', 'clusters', 'numOfClusters')
-    except Exception as res:
-        return eval(str(res))
-    sessions_table_object = sessionsTable.get(query_id)
-    articles_df = utils.handle_articles_count(sessions_table_object, count)
-    articles_df = utils.filter_articles_by_features(articles_df, filters, clusters)
-    try:
-        articles_df = utils.cluster_articles(articles_df, sessions_table_object, num_of_clusters)
-    except RuntimeError as rte:
-        return Response(response=str(rte), status=400, headers=utils.COMMON_HEADER_RESPONSE)
-    try:
-        network = Network(articles_df, feature)
-        # network = SemanticNetwork(articles_df)
-        articles_df, links_list = network.get_network()
-        # nodes, links_list = network.get_network()
-    except ValueError as ve:
-        return Response(response=str(ve), status=400, headers=utils.COMMON_HEADER_RESPONSE)
-    articles_json = utils.articles_to_json(articles_df)
-    return Response(response=json.dumps({"network": {"nodes": articles_json, "links": links_list}}), status=200, headers=utils.COMMON_HEADER_RESPONSE)
-
-
 @app.route('/semanticNetwork/set', methods=['GET'])
 def get_sematic_network_dataset():
+    """
+    gets semantic network by given session_id
+    5 parameter:
+        id: session ID
+        count: number of articles user by user choice
+        filters: chosen filters on the articles
+        clusters: chosen clusters by the user
+        numOfClusters: chosen number of clusters to dived the articles dataset
+    :return: 200/400
+    """
     try:
         (query_id, count, filters, feature, clusters, num_of_clusters) = utils.get_query_params('id', 'count',
-                                                                                                'filters', 'feature',
+                                                                                                'filters',
                                                                                                 'clusters',
                                                                                                 'numOfClusters')
     except Exception as res:
@@ -183,17 +177,19 @@ def get_sematic_network_dataset():
                     headers=utils.COMMON_HEADER_RESPONSE)
 
 
-@app.route('/semanticNetwork/one', methods=['GET'])
-def get_sematic_network_article():
-    pass
-
 @app.route('/getOne', methods=['GET'])
 def get_one():
+    """
+    2 parameter:
+        id: article ID
+        query_id: session ID
+    :return: 200/400
+    """
+
     article_id, query_id = utils.get_query_params('id', 'query_id')
     article = SemanticScholarAPI.get_one_article(article_id)
     articles_obj = sessionsTable.get_article_paperid(query_id, article_id)
     temp_article = json.loads(article)
-    print(f'temp_article {temp_article}')
     if articles_obj is not None:
         if articles_obj['frequentWords'] is not None:
             temp_article['frequentWords'] = articles_obj['frequentWords']
@@ -207,24 +203,28 @@ def get_one():
 
 @app.route('/clusters', methods=['GET'])
 def get_clusters():
+    """
+    gets clusters by given session_id
+    5 parameter:
+        id: session ID
+        count: number of articles user by user choice
+        filters: chosen filters on the articles
+        clusters: chosen clusters by the user
+        numOfClusters: chosen number of clusters to dived the articles dataset
+    :return: 200/400
+    """
     try:
         (query_id, count, filters, clusters, num_of_clusters) = utils.get_query_params('id', 'count', 'filters', 'clusters', 'numOfClusters')
     except Exception as res:
         return eval(str(res))
-    print("1 GET CLUSTERS GET CLUSTERS GET CLUSTERS GET CLUSTERS GET CLUSTERS GET CLUSTERS GET CLUSTERS")
     sessions_table_object = sessionsTable.get(query_id)
-    print("2 GET CLUSTERS GET CLUSTERS GET CLUSTERS GET CLUSTERS GET CLUSTERS GET CLUSTERS GET CLUSTERS")
     articles_df = utils.handle_articles_count(sessions_table_object, count)
-    print("3 GET CLUSTERS GET CLUSTERS GET CLUSTERS GET CLUSTERS GET CLUSTERS GET CLUSTERS GET CLUSTERS")
     articles_df = utils.filter_articles_by_features(articles_df, filters, clusters)
-    print("4 GET CLUSTERS GET CLUSTERS GET CLUSTERS GET CLUSTERS GET CLUSTERS GET CLUSTERS GET CLUSTERS")
     try:
         articles_df = utils.cluster_articles(articles_df, sessions_table_object, num_of_clusters)
-        print("5 GET CLUSTERS GET CLUSTERS GET CLUSTERS GET CLUSTERS GET CLUSTERS GET CLUSTERS GET CLUSTERS")
     except RuntimeError as rte:
         return Response(response=str(rte), status=400, headers=utils.COMMON_HEADER_RESPONSE)
     clusters = utils.get_clusters(articles_df)
-    print(clusters)
     return {"clusters": clusters}
 
 
@@ -241,7 +241,6 @@ def get_collections():
     return utils.get_all_user_collections(user_id)
 
 
-# works and integrated
 @app.route('/create_collection', methods=['POST'])
 def create_collection():
     """
@@ -254,24 +253,17 @@ def create_collection():
     try:
         user_id = utils.get_query_params('user_id')
         collection_name = utils.get_post_data('collection_name')[0]
-        print(f'collection_name {collection_name}')
     except Exception as r:
         return Response(eval(str(r)))
     if privateCollectionsTable.is_collection_exists(user_id, collection_name):
-        print('exists')
         return Response(response=json.dumps({'user_id': user_id}), status=400,
                         headers=utils.COMMON_HEADER_RESPONSE)
     else:
-        print('creating collection')
         collection_object = objects.PrivateCollectionObject(user_id, collection_name)
-        print(f'collection_object: {collection_object.user_id}, {collection_object.collection_name}, {collection_object.articles_list}')
         privateCollectionsTable.insert(collection_object)
         return utils.get_all_user_collections(user_id)
-        # return Response(response=json.dumps({'user_id': collection_object.user_id, 'status': 200}), status=200,
-        #                 headers=utils.COMMON_HEADER_RESPONSE)
 
 
-# works and integrated
 @app.route('/insert_article', methods=['POST'])
 def insert_article():
     """
@@ -292,7 +284,6 @@ def insert_article():
                         headers=utils.COMMON_HEADER_RESPONSE)
 
 
-# works and integrated
 @app.route('/pop_article', methods=['POST'])
 def pop_article():
     """
@@ -306,11 +297,9 @@ def pop_article():
     collection_name, article_id = utils.get_post_data('collection_name', 'article_id')
     print(f'collection_name: {collection_name}, article_id: {article_id}')
     privateCollectionsTable.pop_paper(user_id, collection_name, article_id)
-    # return Response(response=json.dumps({'user_id': user_id}), status=200, headers=utils.COMMON_HEADER_RESPONSE)
     return utils.get_all_user_collections(user_id)
 
 
-# works and integrated
 @app.route('/collection_delete', methods=['DELETE'])
 def collection_delete():
     """
@@ -322,13 +311,10 @@ def collection_delete():
     user_id = utils.get_query_params('user_id')
     collection_name = utils.get_post_data('collection_name')
     collection_name = str(collection_name[0])
-    print(f'collection_name: {collection_name}')
     privateCollectionsTable.delete_collection(user_id, collection_name)
-    # return Response(response=json.dumps({'user_id': user_id}), status=200, headers=utils.COMMON_HEADER_RESPONSE)
     return utils.get_all_user_collections(user_id)
 
 
-# WORKS, and integrated
 @app.route('/rename_collection', methods=['POST'])
 def collection_rename():
     """
@@ -343,16 +329,15 @@ def collection_rename():
         (current_collection, new_collection) = utils.get_post_data('collection_name', 'new_collection')
     except Exception as res:
         return eval(str(res))
-    # current_collection, new_collection = utils.get_post_data('collection_name', 'new_collection')
     privateCollectionsTable.replace(user_id, current_collection, new_collection)
-    # return Response(response=json.dumps({'user_id': user_id}), status=200, headers=utils.COMMON_HEADER_RESPONSE)
     return utils.get_all_user_collections(user_id)
 
 
 @app.route('/breadcrumbs', methods=['GET'])
 def get_breadcrumbs():
     """
-
+    Get breadcrumbs by given id of session
+    :return: 200/400
     """
     query_id = utils.get_query_params('id')
     breadcrumbs = utils.get_breadcrumbs(query_id)
@@ -361,12 +346,12 @@ def get_breadcrumbs():
 
 @app.route('/new_iter', methods=['POST'])
 def new_iter():
+
     """
     Request for new iteration on clusters in specific session
     """
     try:
         (query_id, filters, clusters) = utils.get_post_data('id', 'filters', 'clusters')
-        print(query_id, clusters, filters)
     except Exception as res:
         return eval(str(res))
     sessions_table_object = sessionsTable.get(query_id)

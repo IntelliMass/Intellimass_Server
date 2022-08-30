@@ -4,14 +4,12 @@ import pandas as pd
 import re
 import gensim
 import gensim.corpora as corpora
-import nltk
 from nltk.corpus import stopwords
 
 from sklearn.cluster import KMeans
 from sklearn.decomposition import PCA
 from sklearn.feature_extraction.text import TfidfVectorizer
 
-# nltk.download('stopwords')
 
 TOPICS_NUM = 1
 MY_STOP_WORDS = ['from', 'subject', 're', 'edu', 'use', 'things', 'smart', 'devices', 'new', 'proposed', 'try:based', '-']
@@ -43,7 +41,6 @@ class LdaModeling:
             self._search_keyword[item] = self._search_keyword[item].lower()
 
     def __loading_and_cleaning_data(self, path: str):
-        print("__loading_and_cleaning_data")
         if path.endswith('json'):
             loaded_json = json.load(open(path))
             self.__papers = pd.DataFrame(loaded_json['articles'])
@@ -51,20 +48,16 @@ class LdaModeling:
             self.__papers = pd.read_csv(path)
 
     def __remove_punctuation_and_convert_to_lowercase(self):
-        print("__remove_punctuation_and_convert_to_lowercase")
         self.__papers.loc[:, 'processed_abstract'] = self.__papers.loc[:, 'abstract'].map(
             lambda x: re.sub('[,\.()!?]', '', x))
         self.__papers.loc[:, 'processed_abstract'] = self.__papers.loc[:, 'processed_abstract'].map(lambda x: x.lower())
 
     @staticmethod
     def __sent_to_words(sentences):
-        print("__sent_to_words")
         for sentence in sentences:
-            # deacc=True removes punctuations
             yield gensim.utils.simple_preprocess(str(sentence), deacc=True)
 
     def __stopwords_string(self):
-        print("__stopwords_string")
         self.stop_words = stopwords.words('english')
         self.stop_words.extend(MY_STOP_WORDS)
 
@@ -72,7 +65,6 @@ class LdaModeling:
         return [word for word in word_list if word not in self.stop_words]
 
     def __prepare_data(self):
-        print("__prepare_data")
         self.__papers.loc[:, 'list_abstract'] = self.__papers.loc[:, 'processed_abstract'].apply(lambda x: x.split())
         self.__papers.loc[:, 'cleaned_abstract'] = self.__papers.loc[:, 'list_abstract'].map(
             lambda x: self.remove_stopwords(x))
@@ -80,12 +72,10 @@ class LdaModeling:
         self.__papers['clean_abstract_str'] = self.__papers.loc[:, 'cleaned_abstract'].map(lambda x: " ".join(x))
 
     def kmeans_papers(self):
-        print('kmeans_papers')
-        vectorizer = TfidfVectorizer(sublinear_tf=True, min_df=5, max_df=0.95)
+        vectorizer = TfidfVectorizer(sublinear_tf=True, min_df=5, max_df=0.95, stop_words={'english'})
         try:
             x = vectorizer.fit_transform(self.__papers['clean_abstract_str'])
         except ValueError:
-            print(f"self.__papers['clean_abstract_str']: {self.__papers['clean_abstract_str']}")
             raise Exception("Empty (?)")
         kmeans = KMeans(n_clusters=self._num_of_clusters, random_state=random.randrange(10) if self._re_flag else 42)
         kmeans.fit(x)
@@ -103,7 +93,6 @@ class LdaModeling:
         self.__papers['x1'] = x1
 
     def activate_lda_training(self):
-        print('activate_lda_training')
         list_clusters_numbers = self.__papers['cluster'].unique()
         for num in list_clusters_numbers:
             filtered_data = self.__papers[self.__papers["cluster"] == num]
@@ -164,10 +153,3 @@ class LdaModeling:
     @property
     def clean_papers(self):
         return self.__papers['clean_abstract_str']
-
-
-def main():
-    path_json = './json_file/response100_IOT.json'
-    lda_temp = LdaModeling(path_json)
-    topic_list = lda_temp.topics_list
-    print(f'topic_list: {topic_list}')

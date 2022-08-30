@@ -1,12 +1,20 @@
-# from sentence_transformers import SentenceTransformer
+from sentence_transformers import SentenceTransformer
 import pandas as pd
 from sklearn.metrics.pairwise import cosine_similarity
 import time
 
 
 class BertTextSimilarity:
-    # model = SentenceTransformer('bert-base-nli-mean-tokens')
-    model = None
+    """
+    The model is not in use due to processing power issues.
+
+    BERT is an open source machine learning framework for natural language processing (NLP).
+    BERT is designed to help computers understand the meaning of ambiguous language in text
+    by using surrounding text to establish context.
+    The BERT framework was pre-trained using text from Wikipedia and can be fine-tuned with
+    question and answer datasets.
+    """
+    model = SentenceTransformer('bert-base-nli-mean-tokens')
 
     def __init__(self, articles_df: pd.DataFrame, feature):
         if feature not in articles_df.columns:
@@ -17,6 +25,10 @@ class BertTextSimilarity:
         self.start = time.time()
 
     def get_similarities(self):
+        """
+
+        :return: similarity matrix nXn. n=Number of compared articles
+        """
         text_embeddings = self.model.encode(self.text_series)
         cos_sim = cosine_similarity(
             text_embeddings,

@@ -376,7 +376,6 @@ def update_breadcrumbs(sessions_table_object: dict, count: int, filters: list, c
 
 def get_breadcrumbs(query_id: str):
     sessions_table_object = sessionsTable.get(query_id)
-    breadcrumbs = []
     return sessions_table_object['breadcrumbs']
 
 
@@ -390,7 +389,7 @@ def handle_new_iteration(sessions_table_object, filters, clusters):
     clusters = [cluster['title'] for cluster in clusters]
     filters = list(filters)
     count = sessions_table_object['breadcrumbs'][-1]['count']
-    articles_df = sessions_table_object['articles'][:count]
+    articles_df = pd.DataFrame(sessions_table_object['articles'][:count])
     new_articles_df = filter_articles_by_features(articles_df, filters, clusters)
     sessions_table_object['iteration'] += 1
     sessions_table_object['iteration_cache'] = sessions_table_object['iteration_cache'].append(articles_df.to_dict('records')) if not None else [articles_df.to_dict('records')]
